@@ -121,7 +121,7 @@
 
   <section class="hero" style="border-top:none; padding-top:8px;">
     <h1>An optimizer for problems with a known computation graph.</h1>
-    <p class="lede">Free. Fully local — no server, no license key, no network call, the same as <code class="mono">torch.optim.Adam</code>. If you can write down your objective exactly, SoftOpt uses it to correct your optimizer's trajectory on every step.</p>
+    <p class="lede">Write your objective down and SoftOpt uses it: each step is an update followed by an exact Newton correction computed from your own model. Free, open source, and runs locally.</p>
 
     <div class="chart-card">
       <div class="legend">
@@ -261,7 +261,6 @@ for step in range(num_steps):
       <tr><td class="mono">sdiv(x,y)</td><td>composition</td><td class="mono">smul(x, sinv(y))</td></tr>
     </table>
     <p style="margin-top:14px;"><code class="mono">SoftNumber</code> wraps these with operator syntax (<code class="mono">x + y</code>, <code class="mono">x * y</code>, <code class="mono">x ** 3</code>, <code class="mono">x.sqrt()</code>) and is verified, axiom by axiom, against the book's own proofs that bridge numbers form an abelian group under addition and a ring under both operations.</p>
-    <p style="margin-top:12px; font-size:0.92rem; color:var(--ink-dim);">Every derivative SoftOpt uses is produced by propagating these operations through your model. There is no second path and no approximation step.</p>
   </section>
 
   <footer>

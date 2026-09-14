@@ -121,7 +121,7 @@
 
   <section class="hero" style="border-top:none; padding-top:8px;">
     <h1>An optimizer for problems with a known computation graph.</h1>
-    <p class="lede">Free. Fully local — no server, no license key, no network call, the same as <code class="mono">torch.optim.Adam</code>. If you can write down your objective exactly, SoftOpt uses it to correct your optimizer's trajectory on every step.</p>
+    <p class="lede">Write your objective down and SoftOpt uses it: each step is an update followed by an exact Newton correction computed from your own model. Free, open source, and runs locally.</p>
 
     <div class="chart-card">
       <div class="legend">
@@ -153,7 +153,6 @@
 
     <div class="install-row">
       <span class="mono">pip install softopt</span>
-      <span class="mono">pip install "softopt[torch]"</span>
     </div>
   </section>
 
@@ -229,7 +228,7 @@
 
   <section id="install">
     <h2>Quick start</h2>
-    <pre class="code-block mono"><span class="c"># numpy — write your model in plain Python, nothing special</span>
+    <pre class="code-block mono"><span class="c"># write your model in plain Python, nothing special</span>
 from softopt import SoftOpt, soft_compile
 
 def my_model(theta):
@@ -243,12 +242,7 @@ for step in range(num_steps):
     grad_estimate = my_gradient_estimate(theta)
     theta = opt.step(theta, grad_estimate)
 
-<span class="c"># PyTorch</span>
-from softopt import SoftOptTorch
-
-opt = SoftOptTorch(model.parameters(), model, loss_fn, lr=1e-3)
-for batch in data:
-    loss = opt.step(batch)</pre>
+</pre>
     <p style="margin-top:16px;"><code class="mono">soft_compile</code> traces your model once and derives the exact directional derivative from it — no approximation, and no derivative code to write. It works with arithmetic, powers, <code class="mono">abs</code>, <code class="mono">sqrt</code>, <code class="mono">exp</code>, <code class="mono">log</code>, <code class="mono">sin</code>, <code class="mono">cos</code>, <code class="mono">tanh</code>, loops, and branching, in plain Python or numpy. It then verifies the result against your own model before returning it.</p>
   </section>
 

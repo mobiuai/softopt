@@ -2,7 +2,7 @@
 
 **A standalone optimizer that excels against leading market optimizers like Adam, in problems with a known, differentiable computation graph.**
 
-SoftOpt is free, fully local, and requires no server, license key, or network access — the same way `torch.optim.Adam` requires none. It is not a wrapper around Adam or any other optimizer: it is a complete, drop-in optimizer with its own Adam-equivalent base update, plus an exact Newton-style correction built on Klein–Maimon soft-number calculus (*Foundations of Soft Logic*, Klein & Maimon, Springer 2024).
+Each step is an update followed by an exact Newton correction computed from your own model, through Klein–Maimon soft-number calculus (*Foundations of Soft Logic*, Klein & Maimon, Springer 2024). Free, open source, and runs locally.
 
 ## Where it helps
 
@@ -99,6 +99,12 @@ All results below use IBM's `FakeFez` noise model via Qiskit + Aer, or realistic
 | Portfolio optimization (realistic backtest noise) | ~58x lower loss | 20/20 |
 
 See `benchmarks/` for the exact, runnable scripts behind every one of these numbers, including the raw per-seed results.
+
+A performance table cannot show *why* a method wins. `tests/test_causal.py` runs the optimizer's own code path while replacing the genuine soft-computed curvature with a frozen constant, or with real curvature measured at an unrelated point. Both perform worse than using no correction at all — the specific computed value is doing the work. Run it directly for the full report:
+
+```bash
+python3 tests/test_causal.py
+```
 
 ## The math
 

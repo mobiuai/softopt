@@ -5,7 +5,6 @@ softopt/__init__.py
 softopt/compile.py
 softopt/numpy_optimizer.py
 softopt/soft_number.py
-softopt/torch_optimizer.py
 softopt.egg-info/PKG-INFO
 softopt.egg-info/SOURCES.txt
 softopt.egg-info/dependency_links.txt

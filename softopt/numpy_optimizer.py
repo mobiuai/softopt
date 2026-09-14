@@ -1,9 +1,6 @@
 """
-SoftOpt: a COMPLETE, standalone optimizer -- not a wrapper around Adam.
-Exactly one step() call does both the Adam-style base update AND the
-validated Newton-style correction. You don't bring your own optimizer;
-this IS the optimizer, in the same sense that torch.optim.Adam IS an
-optimizer (internally momentum + RMS-scaling), not a wrapper around SGD.
+SoftOpt: each step() call performs an update followed by an exact Newton
+correction computed from your own model.
 
 Requirement: you supply g_delta(theta, delta) -> the exact directional
 derivative of your true objective along delta, computed from your own
