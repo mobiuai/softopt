@@ -145,3 +145,16 @@ def test_model_that_casts_to_float_is_caught():
         return float(v @ v)
     with pytest.raises(TypeError, match="doesn't depend on the traced parameters"):
         soft_compile(model, n_params=2)
+
+
+def test_a_branch_that_drops_the_derivative_is_caught():
+    """One passing point is not enough: a model can be correct on one branch
+    and silently wrong on the other."""
+    def branching(p):
+        x, y = p
+        if x > 0:
+            return x * x + 2.0 * y
+        return x * x + float(y) * 2.0     # float() discards y's derivative
+
+    with pytest.raises(RuntimeError, match="disagrees with a finite difference"):
+        soft_compile(branching, n_params=2)

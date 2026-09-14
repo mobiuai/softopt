@@ -1,14 +1,16 @@
 """
-SoftOpt: each step() call performs an update followed by an exact Newton
-correction computed from your own model.
+SoftOpt: each step() call performs an update followed by a Newton correction
+computed from your own model.
 
 Requirement: you supply g_delta(theta, delta) -> the exact directional
 derivative of your true objective along delta, computed from your own
 known model (circuit, projection, physical law). `soft_compile` generates
 this for you from a model written in ordinary Python.
 
-The correction is a bounded Newton step derived from the exact first and
-second directional derivatives of your model.
+The correction is a bounded Newton step. The first directional derivative is
+exact, propagated through your model by soft-number arithmetic. The second is
+a central finite difference OF that exact derivative -- an approximation, with
+the usual step-size trade-off, controlled by h_fd.
 """
 import numpy as np
 

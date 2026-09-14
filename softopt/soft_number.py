@@ -87,8 +87,14 @@ def sroot(x, n):
     if b < 0 and n % 2 == 0:
         raise ValueError(f"even root (n={n}) of a soft number with b<0 "
                           "is not real-valued (Lemma 3.4)")
-    b_root = b ** (1.0 / n)
-    a_root = a / (n * b ** ((n - 1) / n))
+    if b < 0:
+        # Odd root of a negative real component: Python's ** returns a complex
+        # principal root here, so take the real root of |b| and restore the sign.
+        b_root = -((-b) ** (1.0 / n))
+    else:
+        b_root = b ** (1.0 / n)
+    # d/db b^(1/n) = b^(1/n) / (n*b), valid for either sign
+    a_root = a * b_root / (n * b)
     return (a_root, b_root)
 
 
@@ -198,15 +204,20 @@ class SoftNumber:
         return SoftNumber(self.a / (self.b * np.log(10.0)), np.log10(self.b))
 
     def __abs__(self):
-        """|x|: the real part determines the branch; the derivative follows
-        its sign (undefined exactly at 0, as for any absolute value)."""
+        """|x|. The real component picks the branch. At exactly zero the
+        derivative of |x| does not exist, so the zero-axis component is
+        reported as nan rather than silently taking one side."""
         if self.b < 0:
             return -self
+        if self.b == 0:
+            return SoftNumber(float("nan") if self.a != 0 else 0.0, 0.0)
         return SoftNumber(self.a, self.b)
 
-    # --- comparisons: ordered by the real component (book Definition 3.1,
-    # "Order": if a < b then a0 < b0). This lets models branch on parameter
-    # values normally; the compiled derivative is then valid on that branch.
+    # --- comparisons. These order by the REAL component only, which is what
+    # lets a model branch on a parameter value; the compiled derivative is then
+    # valid on whichever branch the parameters fall in. Note this is a practical
+    # ordering for tracing, not the book's Definition 3.1 ordering of the zero
+    # axis itself (a0 < b0 when a < b), which concerns the other component.
     def __lt__(self, other):
         return self.b < self._coerce(other).b
 

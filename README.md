@@ -6,7 +6,7 @@ Each step is an update followed by an exact Newton correction computed from your
 
 ## Where it helps
 
-If your problem has a **known computation graph** — a quantum circuit, a physical simulator, a projection or measurement model, anything you can write down exactly, even if the *measurements* of it are noisy — SoftOpt computes an exact directional derivative and curvature of that model on every step, and uses them to correct the optimizer's trajectory. Validated, with real hardware-noise-model data, across:
+If your problem has a **known computation graph** — a quantum circuit, a physical simulator, a projection or measurement model, anything you can write down exactly, even if the *measurements* of it are noisy — SoftOpt computes an exact directional derivative of that model on every step, plus the curvature along the same direction, and uses them to correct the optimizer's trajectory. Validated, with real hardware-noise-model data, across:
 
 - **Quantum chemistry (VQE)** — H₂, H₄, BeH₂, HeH⁺, and larger multireference molecules
 - **Quantum control (GRAPE)** — the single cleanest result across every domain tested

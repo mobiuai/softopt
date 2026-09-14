@@ -121,3 +121,22 @@ def test_class_matches_tuple_based_internals_exactly(xyz):
     assert np.allclose((x + y).as_tuple(), sadd(xt, yt))
     assert np.allclose((x * y).as_tuple(), smul(xt, yt))
     assert np.allclose(x.inverse().as_tuple(), sinv(xt))
+
+
+def test_odd_root_of_a_negative_real_component_is_real():
+    """Python's ** returns the complex principal root for (-8)**(1/3);
+    the real root is the one this algebra means."""
+    from softopt import sroot, spow
+    r = sroot((1.0, -8.0), 3)
+    assert not isinstance(r[0], complex) and not isinstance(r[1], complex)
+    assert np.isclose(r[1], -2.0)
+    assert np.isclose(r[0], 1.0 / 12.0)
+    back = spow(r, 3)
+    assert np.isclose(back[0], 1.0) and np.isclose(back[1], -8.0)
+
+
+def test_abs_reports_an_undefined_derivative_at_the_kink():
+    """|x| has no derivative at zero; report that rather than picking a side."""
+    assert np.isnan(abs(SoftNumber(1.0, 0.0)).a)
+    assert abs(SoftNumber(1.0, -2.0)) == SoftNumber(-1.0, 2.0)
+    assert abs(SoftNumber(1.0, 2.0)) == SoftNumber(1.0, 2.0)

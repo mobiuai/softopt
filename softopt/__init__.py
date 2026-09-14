@@ -23,4 +23,4 @@ __all__ = [
     "sadd", "sneg", "ssub", "smul", "sinv", "sdiv",
     "spow", "sroot", "ssqrt", "ssin", "scos", "sexp", "slog",
 ]
-__version__ = "0.5.3"
+__version__ = "0.5.4"

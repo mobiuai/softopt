@@ -55,17 +55,30 @@ def soft_compile(model_fn, n_params=None, verify=True, verify_tol=1e-5):
     return g_delta
 
 
-def _verify(model_fn, g_delta, n_params, tol):
-    """Compare the exact compiled derivative against a finite difference of
-    the same model evaluated with plain floats."""
+def _verify(model_fn, g_delta, n_params, tol, n_points=6):
+    """Compare the exact compiled derivative against finite differences of the
+    same model, at several scattered points rather than one.
+
+    A single passing point proves very little: a model that branches can be
+    correct on one side and silently wrong on the other, and an operation that
+    discards the traced derivative (float(), np.array on the parameters) may
+    only sit inside one branch. Checking a spread of points catches that."""
     rng = np.random.default_rng(0)
-    for attempt in range(5):
-        theta = rng.normal(0.5, 1.0, n_params)
+    checked = 0
+    attempts = 0
+    while checked < n_points and attempts < n_points * 6:
+        attempts += 1
+        # spread the test points over several scales and both signs, so that
+        # branch conditions like `if x > 0` are exercised on both sides
+        spread = rng.choice([0.3, 1.0, 3.0])
+        theta = rng.normal(0.0, spread, n_params)
         direction = rng.normal(0, 1, n_params)
         try:
             exact = g_delta(theta, direction)
-        except ZeroDivisionError:
-            continue  # landed on a singular point; try another
+        except TypeError:
+            raise          # the model dropped the traced parameters -- a real fault
+        except (ZeroDivisionError, ValueError):
+            continue       # landed outside the model's domain; try elsewhere
         h = 1e-6
         try:
             f_plus = float(model_fn(list(theta + h * direction)))
@@ -79,23 +92,24 @@ def _verify(model_fn, g_delta, n_params, tol):
         approx = (f_plus - f_minus) / (2 * h)
 
         scale = max(abs(approx), abs(exact), 1.0)
-        if abs(exact - approx) / scale < tol:
-            return  # verified
         if abs(approx) < 1e-12 and abs(exact) < 1e-12:
-            continue  # flat direction here; uninformative, try another
+            continue  # flat here; uninformative, doesn't count as a check
+        checked += 1
+        if abs(exact - approx) / scale >= tol:
+            raise RuntimeError(
+                f"at theta={np.array2string(theta, precision=4)} the compiled "
+                f"derivative ({exact:.8g}) disagrees with a finite difference of "
+                f"your model ({approx:.8g}).\n\nIf your model branches, one branch "
+                "may use an operation that discards the traced derivative -- "
+                "float(), np.array() on the parameter list, or a call into a "
+                "library that only accepts plain numbers. Pass verify=False to "
+                "skip this check if you are confident the model is correct."
+            )
 
-        raise RuntimeError(
-            f"compiled derivative ({exact:.8g}) disagrees with a finite "
-            f"difference of your model ({approx:.8g}). Your model may use an "
-            "operation the soft algebra doesn't define, or may not be "
-            "differentiable at this point. Pass verify=False to skip this "
-            "check if you're confident it's correct."
+    if checked == 0:
+        import warnings
+        warnings.warn(
+            "soft_compile could not verify the model: every test point was "
+            "either singular or flat. The compiled function is returned unchecked.",
+            RuntimeWarning,
         )
-    # every attempt landed somewhere uninformative -- don't fail, but don't
-    # claim verification either
-    import warnings
-    warnings.warn(
-        "soft_compile could not verify the model: every test point was "
-        "either singular or flat. The compiled function is returned unchecked.",
-        RuntimeWarning,
-    )
