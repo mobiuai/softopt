@@ -229,10 +229,16 @@
 
   <section id="install">
     <h2>Quick start</h2>
-    <pre class="code-block mono"><span class="c"># numpy</span>
-from softopt import SoftOpt
+    <pre class="code-block mono"><span class="c"># numpy — write your model in plain Python, nothing special</span>
+from softopt import SoftOpt, soft_compile
 
-opt = SoftOpt(n_params, g_delta, lr=0.02)
+def my_model(theta):
+    x, y = theta
+    return (x - 2.0)**2 + np.exp(y) * x
+
+g_delta = soft_compile(my_model, n_params=2)
+opt = SoftOpt(2, g_delta, lr=0.02)
+
 for step in range(num_steps):
     grad_estimate = my_gradient_estimate(theta)
     theta = opt.step(theta, grad_estimate)
@@ -243,7 +249,7 @@ from softopt import SoftOptTorch
 opt = SoftOptTorch(model.parameters(), model, loss_fn, lr=1e-3)
 for batch in data:
     loss = opt.step(batch)</pre>
-    <p style="margin-top:16px;"><code class="mono">g_delta(theta, delta)</code> must be the exact directional derivative of your true objective, computed from your own known model — not estimated from noisy measurements. If you can't write it without sampling the world, SoftOpt isn't the right tool for that problem.</p>
+    <p style="margin-top:16px;"><code class="mono">soft_compile</code> traces your model once and derives the exact directional derivative from it — no approximation, and no derivative code to write. It works with arithmetic, powers, <code class="mono">abs</code>, <code class="mono">sqrt</code>, <code class="mono">exp</code>, <code class="mono">log</code>, <code class="mono">sin</code>, <code class="mono">cos</code>, <code class="mono">tanh</code>, loops, and branching, in plain Python or numpy. It then verifies the result against your own model before returning it.</p>
   </section>
 
   <section id="book">
