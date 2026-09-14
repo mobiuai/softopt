@@ -9,20 +9,11 @@ ground-state energy. Same "known computation graph" property as VQE.
 Target: a Bell state. Objective to MINIMIZE: 1 - |<target|psi>|^2.
 """
 import numpy as np
+from softopt import smul, sadd, ssin, scos
 
 N_LAYERS = 6
 N_QUBITS = 2
 N_PARAMS = N_LAYERS * N_QUBITS
-
-def smul(x, y):
-    a1,b1 = x; a2,b2 = y
-    return (a1*b2 + a2*b1, b1*b2)
-def sadd(x, y):
-    return (x[0]+y[0], x[1]+y[1])
-def scos(x):
-    a,b = x; return (-a*np.sin(b), np.cos(b))
-def ssin(x):
-    a,b = x; return (a*np.cos(b), np.sin(b))
 
 TARGET = np.array([1.0, 0.0, 0.0, 1.0]) / np.sqrt(2)  # Bell state (|00>+|11>)/sqrt2
 

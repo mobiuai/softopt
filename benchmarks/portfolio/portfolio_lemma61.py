@@ -10,21 +10,10 @@ elementary-function rule: exp((a,b)) = (a*exp(b), exp(b))) plus the
 already-used soft division for softmax normalization.
 """
 import numpy as np
+from softopt import smul, sadd, sexp, sinv, sdiv
 
 N_ASSETS = 6
 LAMBDA_RISK = 3.0
-
-def smul(x, y):
-    a1,b1=x; a2,b2=y
-    return (a1*b2+a2*b1, b1*b2)
-def sadd(x, y):
-    return (x[0]+y[0], x[1]+y[1])
-def sexp(x):
-    a,b=x; e=np.exp(b); return (a*e, e)
-def sinv(x):
-    a,b=x; return (-a/b**2, 1.0/b)
-def sdiv(x, y):
-    return smul(x, sinv(y))
 
 rng0 = np.random.default_rng(11)
 MU = rng0.uniform(0.02, 0.15, N_ASSETS)
@@ -44,7 +33,11 @@ E0 = None  # unknown true optimum in closed form for softmax-constrained Markowi
 
 def g_delta(theta0, delta):
     n = N_ASSETS
-    th = [(delta[i], theta0[i]) for i in range(n)]
+    # Softmax is shift-invariant, so subtract the max before exponentiating.
+    # Without this, a large common offset in theta overflows exp() and the
+    # whole soft derivative comes back NaN even though the model is unchanged.
+    shift = float(np.max(theta0))
+    th = [(delta[i], theta0[i] - shift) for i in range(n)]
     exps = [sexp(t) for t in th]
     Z = (0.0, 0.0)
     for e in exps:

@@ -90,7 +90,7 @@ All results below use IBM's `FakeFez` noise model via Qiskit + Aer, or realistic
 
 | Domain | Improvement | Win rate |
 |---|---|---|
-| Camera calibration (bundle adjustment, realistic pixel + outlier noise) | 93.9% | 17/20 |
+| Camera calibration (bundle adjustment, realistic pixel + outlier noise) | 91.6% | 16/20 |
 
 **Finance**
 

@@ -29,6 +29,7 @@ class SoftOpt:
         self.v = None
         self.t = 0
         self.rng = np.random.default_rng(seed)
+        self._ablation_rng = None
         self._test_frozen_constant = _test_frozen_constant
 
     def step(self, theta, grad_estimate, _test_magnitude_source=None, _test_foreign_sampler=None, _test_rng=None):
@@ -69,6 +70,13 @@ class SoftOpt:
         n = theta.shape[0]
         gen_rng = _test_rng if _test_rng is not None else self.rng
         delta = gen_rng.choice([-1.0, 1.0], size=n)
+
+        # The ablation arms must not disturb the probe-direction stream, or
+        # a corrupted arm would also change every direction that follows and
+        # the comparison would no longer be like-for-like.
+        if self._ablation_rng is None:
+            self._ablation_rng = np.random.default_rng(
+                self.rng.integers(0, 2**63 - 1))
         D1 = self.g_delta(theta_after_adam, delta)
         gp = self.g_delta(theta_after_adam + self.h_fd * delta, delta)
         gm = self.g_delta(theta_after_adam - self.h_fd * delta, delta)
@@ -79,8 +87,9 @@ class SoftOpt:
         elif _test_magnitude_source == 'frozen':
             D2_used = self._test_frozen_constant
         elif _test_magnitude_source in ('foreign_point_and_dir', 'foreign_point_same_dir'):
-            theta_f = _test_foreign_sampler(gen_rng)
-            delta_f = gen_rng.choice([-1.0, 1.0], size=n) if _test_magnitude_source == 'foreign_point_and_dir' else delta
+            theta_f = _test_foreign_sampler(self._ablation_rng)
+            delta_f = (self._ablation_rng.choice([-1.0, 1.0], size=n)
+                       if _test_magnitude_source == 'foreign_point_and_dir' else delta)
             gp_f = self.g_delta(theta_f + self.h_fd * delta_f, delta_f)
             gm_f = self.g_delta(theta_f - self.h_fd * delta_f, delta_f)
             D2_used = abs((gp_f - gm_f) / (2 * self.h_fd))

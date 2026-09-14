@@ -14,27 +14,14 @@ rotations (sin/cos, same machinery as quantum gates), translation
 (a,b)^-1 = (-a/b^2, 1/b)).
 """
 import numpy as np
+from softopt import smul, sadd, sinv, sdiv, ssin, scos
 
 N_POINTS = 20
 FOCAL = 500.0
 N_PARAMS = 6  # thetax, thetay, thetaz, tx, ty, tz
 
-def smul(x, y):
-    a1,b1=x; a2,b2=y
-    return (a1*b2+a2*b1, b1*b2)
-def sadd(x, y):
-    return (x[0]+y[0], x[1]+y[1])
 def ssub(x, y):
     return (x[0]-y[0], x[1]-y[1])
-def scos(x):
-    a,b=x; return (-a*np.sin(b), np.cos(b))
-def ssin(x):
-    a,b=x; return (a*np.cos(b), np.sin(b))
-def sinv(x):
-    a,b=x; return (-a/b**2, 1.0/b)
-def sdiv(x, y):
-    return smul(x, sinv(y))
-
 rng0 = np.random.default_rng(42)
 WORLD_PTS = rng0.uniform(-1, 1, size=(N_POINTS, 3)) + np.array([0,0,5.0])  # in front of camera
 TRUE_THETA = np.array([0.15, -0.1, 0.05, 0.3, -0.2, 0.1])
