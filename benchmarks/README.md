@@ -39,18 +39,6 @@ The domains SoftOpt is being developed into full standalone products for.
 GRAPE also includes a comparison against QuTiP's own specialized
 GRAPE/L-BFGS-B optimizer as a reference point.
 
-## qaoa/ -- EXPERIMENTAL, not yet a validated result
-Early results looked promising (`maxcut_mobius.py` beating both Adam and
-the raw-Newton default in one run), but re-running the identical
-benchmark gave a losing result, and `max_independent_set.py`/
-`max_independent_set_mobius.py` never won convincingly with either mode.
-QAOA's curvature is confirmed genuinely sign-indefinite even in the
-noiseless exact model (`d2_stability_diagnostic.py`) -- that diagnosis
-is solid -- but the Mobius correction is not yet a reliable fix. These
-scripts are included so you can see both the winning and losing runs
-for yourself, not to claim a validated result. Do not use this domain
-as a marketing example until it's resolved.
-
 ## bundle_adjustment/ -- camera calibration at scale
 benchmark.py --config small_test|medium|realistic -- scales up to ~900
 parameters (50 cameras, 200 points), where Levenberg-Marquardt's own

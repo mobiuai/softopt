@@ -22,8 +22,8 @@ Full reinforcement learning (or anything else with a continuously **moving targe
 ## Installation
 
 ```bash
-pip install softopt          # numpy version only
-pip install softopt[torch]   # + the PyTorch optimizer
+pip install softopt            # numpy version only
+pip install "softopt[torch]"   # + the PyTorch optimizer (quotes needed on zsh, macOS's default shell)
 ```
 
 ## Quick start
