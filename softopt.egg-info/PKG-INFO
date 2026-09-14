@@ -1,3 +1,30 @@
+Metadata-Version: 2.4
+Name: softopt
+Version: 0.2.1
+Summary: A standalone optimizer for problems with a known computation graph, built on Klein–Maimon soft-number calculus
+Author: Ido Angel
+License: MIT
+Project-URL: Homepage, https://github.com/mobiuai/softopt
+Project-URL: Repository, https://github.com/mobiuai/softopt
+Project-URL: Issues, https://github.com/mobiuai/softopt/issues
+Keywords: optimizer,optimization,soft-logic,soft-numbers,quantum-computing,vqe,qaoa,pytorch
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Topic :: Scientific/Engineering :: Physics
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.20
+Provides-Extra: torch
+Requires-Dist: torch>=2.0; extra == "torch"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: torch>=2.0; extra == "dev"
+Dynamic: license-file
+
 # SoftOpt
 
 **A standalone optimizer that excels against leading market optimizers like Adam, in problems with a known, differentiable computation graph.**
@@ -31,30 +58,18 @@ pip install "softopt[torch]"   # + the PyTorch optimizer (quotes needed on zsh, 
 ### NumPy
 
 ```python
-import numpy as np
-from softopt import SoftOpt, soft_compile
+from softopt import SoftOpt
 
-# Write your model once, in plain Python. No special arithmetic.
-def my_model(theta):
-    x, y = theta
-    return (x - 2.0)**2 + np.exp(y) * x
-
-# soft_compile turns it into the exact directional-derivative function
-# SoftOpt needs, and verifies the result against your own model.
-g_delta = soft_compile(my_model, n_params=2)
-
-opt = SoftOpt(2, g_delta, lr=0.02)
+# g_delta(theta, delta) must return the EXACT directional derivative of
+# your true, differentiable objective along `delta`, at `theta` — computed
+# from your own known model (a circuit, a projection, a physical law),
+# not estimated from noisy measurements.
+opt = SoftOpt(n_params, g_delta, lr=0.02)
 
 for step in range(num_steps):
     grad_estimate = my_gradient_estimate(theta)   # e.g. from SPSA on real hardware
     theta = opt.step(theta, grad_estimate)
 ```
-
-Your model needs to be built from arithmetic and the elementary functions the soft algebra defines: `+ - * / **` (including negative and fractional exponents, and `2.0 ** x`), `abs`, `sqrt`, `exp`, `log`, `log10`, `sin`, `cos`, `tanh`, comparisons, and numpy's versions of those. Loops and `if`/`else` branching on parameter values work too — the compiled derivative is then valid on the branch your parameters are actually in.
-
-The one thing to avoid is converting a traced value back to a plain number mid-model — `float(x)`, or `np.array(params)` on the parameter list, both silently discard the derivative. `soft_compile`'s verification catches this and says so.
-
-If you'd rather write the derivative function yourself — because your model lives in a simulator SoftOpt can't trace, or because you want the speed of a hand-tuned implementation — pass any `g_delta(theta, delta)` that returns the exact directional derivative, and skip `soft_compile` entirely.
 
 ### PyTorch
 

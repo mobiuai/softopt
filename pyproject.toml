@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "softopt"
-version = "0.2.0"
+version = "0.3.0"
 description = "A standalone optimizer for problems with a known computation graph, built on Klein–Maimon soft-number calculus"
 readme = "README.md"
 license = { text = "MIT" }

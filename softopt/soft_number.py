@@ -56,13 +56,21 @@ def sdiv(x, y):
 
 # --- Section 3.3.4: Lemma 3.3, integer powers ---
 def spow(x, n):
-    if not isinstance(n, int) or n < 0:
-        raise ValueError("spow implements Lemma 3.3 for non-negative "
-                          "integers only; use sroot(x, n) for Lemma 3.4/3.5")
+    """Integer powers via Lemma 3.3; fractional powers by composing
+    Lemma 3.3 with Lemma 3.5's root (e.g. x**2.5 = (x**5)**(1/2))."""
     a, b = x
-    if n == 0:
-        return (0.0, 1.0)
-    return (n * a * b ** (n - 1), b**n)
+    if isinstance(n, float) and n.is_integer():
+        n = int(n)
+    if isinstance(n, int):
+        if n < 0:
+            return sinv(spow(x, -n))
+        if n == 0:
+            return (0.0, 1.0)
+        return (n * a * b ** (n - 1), b**n)
+    # fractional: x**(p/q). Use the chain rule form directly -- for
+    # f(t)=t^n the extension rule gives (a*n*b^(n-1), b^n), which holds
+    # for real n as well, by Lemma 6.1's general f(a,b)=(a*f'(b), f(b)).
+    return (a * n * b ** (n - 1), b**n)
 
 
 # --- Section 3.3.5: Lemma 3.4 (square root), Lemma 3.5 (n-th root) ---
@@ -104,6 +112,14 @@ def sexp(x):
     a, b = x
     e = np.exp(b)
     return (a * e, e)
+
+
+def slog(x):
+    """Natural logarithm, Lemma 6.1's general rule with f(t)=ln(t)."""
+    a, b = x
+    if b <= 0:
+        raise ValueError("slog requires a positive real component")
+    return (a / b, np.log(b))
 
 
 class SoftNumber:
@@ -157,7 +173,57 @@ class SoftNumber:
         return self._coerce(other) / self
 
     def __pow__(self, n):
+        if isinstance(n, SoftNumber):
+            # x**y with both soft: x**y = exp(y * ln x)
+            return (self.log() * n).exp()
         return self._from_tuple(spow(self.as_tuple(), n))
+
+    def __rpow__(self, base):
+        """base ** self, where base is an ordinary number.
+        d/dt base^t = base^t * ln(base)."""
+        if base <= 0:
+            raise ValueError(f"{base}**SoftNumber requires a positive base")
+        val = base ** self.b
+        return SoftNumber(self.a * val * np.log(base), val)
+
+    def log(self):
+        """Natural log, via Lemma 6.1's general rule with f=ln."""
+        return self._from_tuple(slog(self.as_tuple()))
+
+    def tanh(self):
+        t = np.tanh(self.b)
+        return SoftNumber(self.a * (1.0 - t * t), t)
+
+    def log10(self):
+        return SoftNumber(self.a / (self.b * np.log(10.0)), np.log10(self.b))
+
+    def __abs__(self):
+        """|x|: the real part determines the branch; the derivative follows
+        its sign (undefined exactly at 0, as for any absolute value)."""
+        if self.b < 0:
+            return -self
+        return SoftNumber(self.a, self.b)
+
+    # --- comparisons: ordered by the real component (book Definition 3.1,
+    # "Order": if a < b then a0 < b0). This lets models branch on parameter
+    # values normally; the compiled derivative is then valid on that branch.
+    def __lt__(self, other):
+        return self.b < self._coerce(other).b
+
+    def __le__(self, other):
+        return self.b <= self._coerce(other).b
+
+    def __gt__(self, other):
+        return self.b > self._coerce(other).b
+
+    def __ge__(self, other):
+        return self.b >= self._coerce(other).b
+
+    def __float__(self):
+        """The real component. Note this DISCARDS the derivative -- if your
+        model calls float() on a traced value, the compiled derivative will
+        be wrong, which soft_compile's verification is designed to catch."""
+        return float(self.b)
 
     def root(self, n):
         return self._from_tuple(sroot(self.as_tuple(), n))
