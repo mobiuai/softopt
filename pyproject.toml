@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "softopt"
+version = "0.1.0"
+description = "A standalone optimizer for problems with a known computation graph, built on Klein–Maimon soft-number calculus"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [
+    { name = "Ido Angel" }
+]
+keywords = ["optimizer", "optimization", "soft-logic", "soft-numbers", "quantum-computing", "vqe", "qaoa", "pytorch"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "numpy>=1.20",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=2.0"]
+dev = ["pytest>=7.0", "torch>=2.0"]
+
+[project.urls]
+Homepage = "https://github.com/mobiuai/softopt"
+Repository = "https://github.com/mobiuai/softopt"
+Issues = "https://github.com/mobiuai/softopt/issues"
+
+[tool.setuptools.packages.find]
+include = ["softopt*"]
