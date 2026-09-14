@@ -119,6 +119,12 @@ cd benchmarks/grape && python3 causal_ablation.py --seeds 1000
 python3 tests/test_causal.py          # the same test, smaller and faster
 ```
 
+### Two interfaces to the same algebra
+
+`SoftNumber` gives you operator syntax (`x * y`, `x.exp()`) and is what `soft_compile` traces your model with. The tuple functions (`smul`, `sadd`, `ssin`, ...) are the same operations applied to whole numpy arrays at once, which is what the benchmark engines use — a quantum circuit propagates 2ⁿ amplitudes per gate, and one Python object per amplitude would not be workable.
+
+They are the same algebra and produce identical numbers; `tests/test_causal.py` asserts that agreement to 1e-15 across every operation, and also asserts that soft-number operations actually fire during an optimizer step.
+
 ## The math
 
 The full soft-number algebra is available from the package (`from softopt import SoftNumber, sadd, smul, ...`), each operation cited to its exact source in *Foundations of Soft Logic* (Klein & Maimon, Springer 2024):
