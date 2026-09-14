@@ -124,10 +124,23 @@ All results below use IBM's `FakeFez` noise model via Qiskit + Aer, or realistic
 
 See `benchmarks/` for the exact, runnable scripts behind every one of these numbers, including the raw per-seed results.
 
-A performance table cannot show *why* a method wins. `tests/test_causal.py` runs the optimizer's own code path while replacing the genuine soft-computed curvature with a frozen constant, or with real curvature measured at an unrelated point. Both perform worse than using no correction at all — the specific computed value is doing the work. Run it directly for the full report:
+A performance table cannot show *why* a method wins. The ablation runs the optimizer's own code path while replacing the genuine soft-computed curvature with a frozen constant, or with real curvature measured at an unrelated point — everything else held identical.
+
+On GRAPE, 1000 seeds per arm:
+
+| curvature fed to the correction | mean gap | genuine wins | p |
+|---|---|---|---|
+| genuine | 5.63e-06 | — | — |
+| none (Adam alone) | 2.52e-04 | 985/1000 | 3.3e-163 |
+| frozen constant | 4.84e-01 | 1000/1000 | 3.3e-165 |
+| foreign point, fresh direction | 4.12e-01 | 1000/1000 | 3.3e-165 |
+| foreign point, same direction | 4.26e-01 | 1000/1000 | 3.3e-165 |
+
+A correction fed a non-genuine value does not merely help less — it lands about 1600× worse than applying no correction at all. Run it yourself:
 
 ```bash
-python3 tests/test_causal.py
+cd benchmarks/grape && python3 causal_ablation.py --seeds 1000
+python3 tests/test_causal.py          # the same test, smaller and faster
 ```
 
 ## The math
