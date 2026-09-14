@@ -69,15 +69,6 @@ for batch in data:
 
 `loss_fn(model, batch)` must be an exactly re-evaluatable, differentiable function of the model's own parameters — a full-batch loss, a physics simulator, a known projection model. SoftOpt uses PyTorch's own forward-mode autodiff (`torch.func.jvp`) to get the same exact directional derivative and curvature the NumPy version computes by hand.
 
-## Two correction modes
-
-SoftOpt ships with two ways of turning the computed derivative/curvature into a parameter update:
-
-- **`newton`** (default) — a bounded Newton step `t* = clip(-D1/D2, bounds)`. Best when the curvature (D2) is consistently one-signed along random directions — true for essentially every gradient-based physics/circuit optimization problem we tested (VQE, GRAPE, camera calibration, portfolio, ...).
-- **`mobius`** — a bounded, sign-safe step derived from the book's own Möbius map (Ch. 5.3), for problems whose curvature is *not* reliably one-signed. Pass `mode="mobius"` to `SoftOpt`/`SoftOptTorch` if `newton` underperforms plain Adam on your problem — that pattern is itself informative about your landscape's curvature.
-
-**How do I know which one to use?** Right now, empirically: run a short comparison against plain Adam with `mode="newton"` first; if it clearly loses, try `mode="mobius"`. There is also an experimental `mode="auto"` that samples curvature sign near your starting point and picks for you — we tested it honestly and it is **not yet reliable** (on GRAPE, a domain we know needs `newton` with high confidence, it only picked correctly 40% of the time across random starting points). It's included so you can inspect `opt.detected_mode` and help us characterize when it works, but don't depend on it yet.
-
 ## Validated results
 
 All results below use IBM's `FakeFez` noise model via Qiskit + Aer, or realistic finite-sample/measurement noise for the non-quantum domains, with `torch.optim.Adam` as the baseline. Improvement is the reduction in gap to the known optimum (or, for Portfolio, the reduction in loss).

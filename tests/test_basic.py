@@ -14,27 +14,13 @@ def quadratic_g_delta(theta, delta):
     return float(2 * theta @ delta)
 
 
-def test_newton_mode_converges_on_convex_quadratic():
+def test_converges_on_convex_quadratic():
     opt = SoftOpt(5, quadratic_g_delta, lr=0.1, seed=0)
     theta = np.ones(5)
     for _ in range(200):
         grad = 2 * theta  # exact gradient, standing in for a real gradient estimate
         theta = opt.step(theta, grad)
     assert np.allclose(theta, 0.0, atol=1e-2)
-
-
-def test_mobius_mode_runs_without_error():
-    opt = SoftOpt(5, quadratic_g_delta, lr=0.1, mode="mobius", seed=0)
-    theta = np.ones(5)
-    for _ in range(50):
-        grad = 2 * theta
-        theta = opt.step(theta, grad)
-    assert np.all(np.isfinite(theta))
-
-
-def test_invalid_mode_raises():
-    with pytest.raises(ValueError):
-        SoftOpt(5, quadratic_g_delta, mode="not_a_real_mode")
 
 
 def test_step_is_deterministic_given_seed():

@@ -5,95 +5,34 @@ validated Newton-style correction. You don't bring your own optimizer;
 this IS the optimizer, in the same sense that torch.optim.Adam IS an
 optimizer (internally momentum + RMS-scaling), not a wrapper around SGD.
 
-Requirement (the "known computation graph" criterion, validated across
-nine domains today): you must supply g_delta(theta, delta) -> the exact
-directional derivative of your TRUE, differentiable objective along
-delta, computed via Klein-Maimon soft-number propagation through your
-own known model (circuit, projection, force field, ...). If you cannot
-write g_delta without sampling the world, SoftOpt is not the right tool
--- use plain Adam/SGD instead.
+Requirement: you supply g_delta(theta, delta) -> the exact directional
+derivative of your true objective along delta, computed from your own
+known model (circuit, projection, physical law). `soft_compile` generates
+this for you from a model written in ordinary Python.
 
-Three correction modes (see README for details):
-- mode="newton" (default): bounded Newton step, best for one-signed
-  curvature (most physics/circuit problems).
-- mode="mobius": bounded, sign-safe Mobius-map step (book Ch.5.3), for
-  landscapes whose curvature isn't reliably one-signed (e.g. QAOA).
-- mode="auto" (EXPERIMENTAL, not yet reliable -- see README): attempts
-  to diagnose which of the above fits your problem by sampling D2's
-  sign near the starting point. Tested against GRAPE (a domain that
-  needs "newton" with high confidence) it only picked "newton" 40% of
-  the time -- a single starting region's local curvature sign is not
-  a reliable predictor of the right mode for the whole optimization.
-  Shipped anyway, clearly labeled, so you can inspect `opt.detected_mode`
-  and help characterize when it does/doesn't work, but do not rely on
-  it yet -- the empirically-validated way to choose is still: try both
-  modes on a short run and keep whichever beats plain Adam.
+The correction is a bounded Newton step derived from the exact first and
+second directional derivatives of your model.
 """
 import numpy as np
 
 
-def _mobius_B(x, y):
-    """Book Ch.5.3's Möbius map, bounded to [-1,1] -- a sign-safe
-    alternative to raw Newton division for landscapes whose curvature
-    isn't reliably one-signed (e.g. QAOA, empirically)."""
-    denom = abs(x) + abs(y)
-    if denom < 1e-12:
-        return 0.0
-    sgn = 1.0 if x >= 0 else -1.0
-    return y * sgn / denom
-
-
 class SoftOpt:
     def __init__(self, n_params, g_delta, lr=0.02, betas=(0.9, 0.999), eps=1e-8,
-                 mode="newton", auto_detect_steps=30, auto_detect_threshold=0.8,
                  newton_lo=-0.5, newton_hi=0.5, eta_fallback=0.3,
-                 eta_mobius=0.3, h_fd=1e-4, seed=None,
-                 _test_frozen_constant=1.0):
+                 h_fd=1e-4, seed=None, _test_frozen_constant=1.0):
         self.g_delta = g_delta
         self.lr = lr
         self.b1, self.b2 = betas
         self.eps = eps
-        if mode not in ("newton", "mobius", "auto"):
-            raise ValueError("mode must be 'newton', 'mobius', or 'auto'")
-        self.mode = mode
-        self.auto_detect_steps = auto_detect_steps
-        self.auto_detect_threshold = auto_detect_threshold
-        self._auto_pending = (mode == "auto")
-        self.detected_mode = None if mode == "auto" else mode
         self.newton_lo = newton_lo
         self.newton_hi = newton_hi
         self.eta_fallback = eta_fallback
-        self.eta_mobius = eta_mobius
         self.h_fd = h_fd
         self.m = None
         self.v = None
         self.t = 0
         self.rng = np.random.default_rng(seed)
         self._test_frozen_constant = _test_frozen_constant
-
-    def _diagnose_mode(self, theta0):
-        """Run once, before any optimization step: sample D2's sign
-        across several nearby points (not just theta0 itself -- a single
-        point's local curvature sign is not always representative) and
-        several random directions per point, matching the methodology
-        that correctly distinguished GRAPE/VQE's one-signed curvature
-        from QAOA's sign-indefinite curvature."""
-        n = theta0.shape[0]
-        n_points = 5
-        dirs_per_point = max(1, self.auto_detect_steps // n_points)
-        signs = []
-        for p in range(n_points):
-            point = theta0 if p == 0 else theta0 + self.rng.normal(scale=0.1, size=n)
-            for _ in range(dirs_per_point):
-                delta = self.rng.choice([-1.0, 1.0], size=n)
-                gp = self.g_delta(point + self.h_fd * delta, delta)
-                gm = self.g_delta(point - self.h_fd * delta, delta)
-                D2 = (gp - gm) / (2 * self.h_fd)
-                signs.append(1.0 if D2 >= 0 else -1.0)
-        signs = np.array(signs)
-        agreement = max(np.mean(signs > 0), np.mean(signs < 0))
-        self.detected_mode = "newton" if agreement >= self.auto_detect_threshold else "mobius"
-        self.mode = self.detected_mode
 
     def step(self, theta, grad_estimate, _test_magnitude_source=None, _test_foreign_sampler=None, _test_rng=None):
         """One complete optimizer step: Adam base update + Newton-style
@@ -114,10 +53,6 @@ class SoftOpt:
         """
         theta = np.asarray(theta, dtype=float)
         grad_estimate = np.asarray(grad_estimate, dtype=float)
-
-        if self._auto_pending:
-            self._diagnose_mode(theta)
-            self._auto_pending = False
 
         # --- Adam base update ---
         self.t += 1
@@ -155,14 +90,9 @@ class SoftOpt:
         else:
             raise ValueError(_test_magnitude_source)
 
-        if self.mode == "mobius":
-            B = _mobius_B(D1, D2_used)
-            t_star = self.eta_mobius * B
+        if D2_real > 1e-8 and D2_used > 1e-9:
+            t_star = float(np.clip(-D1 / D2_used, self.newton_lo, self.newton_hi))
         else:
-            activate = D2_real > 1e-8
-            if activate and D2_used > 1e-9:
-                t_star = float(np.clip(-D1 / D2_used, self.newton_lo, self.newton_hi))
-            else:
-                t_star = float(np.clip(-self.eta_fallback * D1, self.newton_lo, self.newton_hi))
+            t_star = float(np.clip(-self.eta_fallback * D1, self.newton_lo, self.newton_hi))
 
         return theta_after_adam + t_star * delta
