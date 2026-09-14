@@ -11,5 +11,6 @@ softopt.egg-info/dependency_links.txt
 softopt.egg-info/requires.txt
 softopt.egg-info/top_level.txt
 tests/test_basic.py
+tests/test_causal.py
 tests/test_compile.py
 tests/test_soft_number.py
