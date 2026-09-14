@@ -12,8 +12,8 @@ soft-number arithmetic yourself.
     g_delta = soft_compile(my_model, n_params=2)
     opt = SoftOpt(2, g_delta, lr=0.02)
 
-Your model is traced once with SoftNumber objects in place of floats, so
-every operation carries its exact derivative alongside its value. This is
+Every call re-runs your model with SoftNumber objects in place of floats, so
+each operation carries its exact derivative alongside its value. The result is
 exact -- not a finite-difference approximation.
 
 Your model must be built from arithmetic and the elementary functions the
@@ -43,6 +43,13 @@ def soft_compile(model_fn, n_params=None, verify=True, verify_tol=1e-5):
                 "-- its output doesn't depend on the traced parameters, or an "
                 "operation in it discarded them (e.g. float(), np.array(...), "
                 "or comparison-based rounding)"
+            )
+        if np.any(np.isinf([result.a, result.b])) or np.any(np.isnan([result.a, result.b])):
+            raise FloatingPointError(
+                f"the model produced a non-finite value ({result.b}) or "
+                f"derivative ({result.a}) at this point -- usually overflow in "
+                "exp/pow, or a division approaching zero. Returning it would "
+                "put nan or inf straight into your parameters."
             )
         return result.a
 
@@ -91,6 +98,23 @@ def _verify(model_fn, g_delta, n_params, tol, n_points=6):
             ) from e
         approx = (f_plus - f_minus) / (2 * h)
 
+        # A complex or nan result means this point is outside the model's real
+        # domain (a fractional power of a negative, say). That is a bad test
+        # point, not a bad model -- skip it and sample elsewhere.
+        if isinstance(exact, complex) or isinstance(approx, complex):
+            continue
+        if np.isnan(exact) or np.isnan(approx):
+            continue
+        # Infinity is different: the model really did blow up here, and a
+        # tolerance check would let it through since every nan/inf comparison
+        # is False.
+        if np.isinf(exact) or np.isinf(approx):
+            raise FloatingPointError(
+                f"at theta={np.array2string(theta, precision=4)} the model "
+                f"overflowed (compiled {exact}, finite difference {approx}). "
+                "Usually exp/pow overflow, or a division approaching zero."
+            )
+
         scale = max(abs(approx), abs(exact), 1.0)
         if abs(approx) < 1e-12 and abs(exact) < 1e-12:
             continue  # flat here; uninformative, doesn't count as a check
@@ -106,10 +130,12 @@ def _verify(model_fn, g_delta, n_params, tol, n_points=6):
                 "skip this check if you are confident the model is correct."
             )
 
-    if checked == 0:
+    if checked < n_points:
         import warnings
         warnings.warn(
-            "soft_compile could not verify the model: every test point was "
-            "either singular or flat. The compiled function is returned unchecked.",
+            f"soft_compile verified the model at only {checked} of {n_points} "
+            "test points -- the rest were singular or flat, so they proved "
+            "nothing either way. Treat the compiled derivative as checked less "
+            "thoroughly than usual.",
             RuntimeWarning,
         )

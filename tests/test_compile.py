@@ -158,3 +158,26 @@ def test_a_branch_that_drops_the_derivative_is_caught():
 
     with pytest.raises(RuntimeError, match="disagrees with a finite difference"):
         soft_compile(branching, n_params=2)
+
+
+def test_non_finite_derivative_is_rejected_at_verification():
+    """Every comparison against nan is False, so a tolerance check alone would
+    let a non-finite result through."""
+    def blowup(p):
+        x, y = p
+        return np.exp(x * x * 400.0) + y
+
+    with pytest.raises(FloatingPointError):
+        soft_compile(blowup, n_params=2)
+
+
+def test_non_finite_derivative_is_rejected_at_run_time():
+    """Verification samples a region; the guard has to hold everywhere else too,
+    or nan reaches the parameters on the first step."""
+    def edge(p):
+        x, y = p
+        return np.exp(x) + y * y
+
+    g = soft_compile(edge, n_params=2)
+    with pytest.raises(FloatingPointError):
+        g(np.array([900.0, 1.0]), np.array([1.0, 0.0]))
