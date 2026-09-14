@@ -24,10 +24,3 @@ __all__ = [
     "spow", "sroot", "ssqrt", "ssin", "scos", "sexp", "slog",
 ]
 __version__ = "0.4.0"
-
-try:
-    from .torch_optimizer import SoftOpt as SoftOptTorch
-    __all__.append("SoftOptTorch")
-except ImportError:
-    # torch is an optional dependency (pip install softopt[torch])
-    pass

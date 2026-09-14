@@ -22,13 +22,10 @@ Full reinforcement learning (or anything else with a continuously **moving targe
 ## Installation
 
 ```bash
-pip install softopt            # numpy version only
-pip install "softopt[torch]"   # + the PyTorch optimizer (quotes needed on zsh, macOS's default shell)
+pip install softopt
 ```
 
 ## Quick start
-
-### NumPy
 
 ```python
 import numpy as np
@@ -55,19 +52,6 @@ Your model needs to be built from arithmetic and the elementary functions the so
 The one thing to avoid is converting a traced value back to a plain number mid-model — `float(x)`, or `np.array(params)` on the parameter list, both silently discard the derivative. `soft_compile`'s verification catches this and says so.
 
 If you'd rather write the derivative function yourself — because your model lives in a simulator SoftOpt can't trace, or because you want the speed of a hand-tuned implementation — pass any `g_delta(theta, delta)` that returns the exact directional derivative, and skip `soft_compile` entirely.
-
-### PyTorch
-
-```python
-from softopt import SoftOptTorch
-
-opt = SoftOptTorch(model.parameters(), model, loss_fn, lr=1e-3)
-
-for batch in data:
-    loss = opt.step(batch)   # one call: backward + Adam update + soft-number correction
-```
-
-`loss_fn(model, batch)` must be an exactly re-evaluatable, differentiable function of the model's own parameters — a full-batch loss, a physics simulator, a known projection model. SoftOpt uses PyTorch's own forward-mode autodiff (`torch.func.jvp`) to get the same exact directional derivative and curvature the NumPy version computes by hand.
 
 ## Validated results
 

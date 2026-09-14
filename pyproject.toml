@@ -12,7 +12,7 @@ requires-python = ">=3.9"
 authors = [
     { name = "Ido Angel" }
 ]
-keywords = ["optimizer", "optimization", "soft-logic", "soft-numbers", "quantum-computing", "vqe", "qaoa", "pytorch"]
+keywords = ["optimizer", "optimization", "soft-logic", "soft-numbers", "uncertainty", "sensitivity", "quantum-computing", "vqe"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
@@ -26,8 +26,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-torch = ["torch>=2.0"]
-dev = ["pytest>=7.0", "torch>=2.0"]
+dev = ["pytest>=7.0"]
 
 [project.urls]
 Homepage = "https://github.com/mobiuai/softopt"

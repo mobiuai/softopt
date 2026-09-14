@@ -43,9 +43,3 @@ GRAPE/L-BFGS-B optimizer as a reference point.
 benchmark.py --config small_test|medium|realistic -- scales up to ~900
 parameters (50 cameras, 200 points), where Levenberg-Marquardt's own
 per-iteration cost starts to matter.
-
-## rl_honest_null/ -- where SoftOpt does *not* help, shown honestly
-Full PPO on LunarLander. It loses to plain Adam, as expected: full reinforcement
-learning has a continuously moving policy target, not the fixed,
-known objective SoftOpt's correction requires. Included so you can see
-the honest limit for yourself, not just take our word for it.

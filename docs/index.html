@@ -223,7 +223,7 @@
     <p>Two honest limits, stated plainly rather than discovered the hard way:</p>
     <ul class="not-list">
       <li><strong style="color:var(--ink)">A moving target.</strong> Full reinforcement learning — or anything with a continuously shifting policy, adversary, or distribution — is outside SoftOpt's validated scope. The correction needs a fixed objective to compute against.</li>
-      <li><strong style="color:var(--ink)">A landscape with unpredictable curvature.</strong> Some problems don't have consistently one-signed curvature. SoftOpt's default <code class="mono">newton</code> mode assumes they do; <code class="mono">mode="mobius"</code> is built for when it doesn't hold.</li>
+      <li><strong style="color:var(--ink)">A landscape with unpredictable curvature.</strong> The correction assumes the curvature along a random direction is consistently one-signed — true across the physics, circuit and engineering problems tested here. Where it isn't, the correction stops helping.</li>
     </ul>
   </section>
 

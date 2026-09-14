@@ -40,11 +40,3 @@ def test_plain_arm_skips_correction():
     theta = np.array([1.0, 1.0, 1.0])
     result = opt.step(theta, 2 * theta, _test_magnitude_source="plain")
     assert np.all(np.isfinite(result))
-
-
-def test_torch_optimizer_importable_if_torch_present():
-    try:
-        import torch  # noqa: F401
-    except ImportError:
-        pytest.skip("torch not installed")
-    from softopt import SoftOptTorch  # noqa: F401
