@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoftOpt — an optimizer for problems with a known computation graph</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg: #10141C;
+    --bg-raised: #161B26;
+    --line: #262E3D;
+    --ink: #E7EAF0;
+    --ink-dim: #98A2B5;
+    --adam: #5B8DEF;
+    --softopt: #E0A526;
+    --good: #4FAE7C;
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    line-height:1.55;
+  }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  .wrap{ max-width: 980px; margin:0 auto; padding: 0 28px; }
+
+  header.top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 18px 0;
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(16,20,28,0.88);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .wordmark{ font-family:'Source Serif 4', serif; font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; }
+  nav a{ color:var(--ink-dim); text-decoration:none; margin-left: 26px; font-size:0.95rem; }
+  nav a:hover{ color:var(--ink); }
+
+  /* ---- hero ---- */
+  .hero{ padding: 56px 0 40px; }
+  .hero h1{
+    font-family:'Source Serif 4', serif; font-weight: 600;
+    font-size: clamp(2.1rem, 4vw, 2.9rem); line-height:1.18;
+    max-width: 720px; margin: 0 0 18px;
+  }
+  .hero p.lede{
+    color: var(--ink-dim); font-size: 1.15rem; max-width: 620px; margin: 0 0 34px;
+  }
+  .hero p.lede code{ color: var(--ink); background:none; }
+
+  .chart-card{
+    background: var(--bg-raised); border: 1px solid var(--line); border-radius: 10px;
+    padding: 28px 28px 20px; margin-bottom: 14px;
+  }
+  .chart-card .cap{ color: var(--ink-dim); font-size: 0.9rem; margin-top: 16px; }
+  .legend{ display:flex; gap: 22px; margin-bottom: 6px; font-size:0.92rem; }
+  .legend span{ display:inline-flex; align-items:center; gap: 8px; }
+  .swatch{ width: 12px; height: 12px; border-radius: 2px; display:inline-block; }
+
+  .install-row{ display:flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+  .install-row .mono{
+    background: var(--bg-raised); border: 1px solid var(--line); border-radius: 7px;
+    padding: 10px 16px; font-size: 0.95rem; color: var(--ink);
+  }
+
+  /* ---- sections ---- */
+  section{ padding: 46px 0; border-top: 1px solid var(--line); }
+  h2{
+    font-family:'Source Serif 4', serif; font-weight:600; font-size: 1.5rem;
+    margin: 0 0 20px;
+  }
+  p{ color: var(--ink-dim); max-width: 680px; }
+
+  .domain-grid{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr));
+    gap: 10px; margin-top: 22px;
+  }
+  .domain{
+    border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px;
+    font-size: 0.93rem; color: var(--ink);
+  }
+
+  .not-list{ color: var(--ink-dim); }
+  .not-list li{ margin-bottom: 10px; }
+
+  .results{ width:100%; border-collapse: collapse; margin-top: 10px; font-size: 0.94rem; }
+  .results th{ text-align:left; color: var(--ink-dim); font-weight:500; padding: 8px 14px 8px 0; border-bottom: 1px solid var(--line); }
+  .results td{ padding: 12px 14px 12px 0; border-bottom: 1px solid var(--line); }
+  .results td.num, .results th.num{ text-align:right; padding-right: 22px; }
+  .results .win{ color: var(--good); font-weight:500; }
+
+  pre.code-block{
+    background: var(--bg-raised); border: 1px solid var(--line); border-radius: 8px;
+    padding: 18px 20px; overflow-x:auto; font-size: 0.88rem; color: var(--ink);
+    line-height: 1.6;
+  }
+  pre.code-block .c{ color: var(--ink-dim); }
+
+  footer{ padding: 40px 0 60px; color: var(--ink-dim); font-size: 0.9rem; }
+  footer a{ color: var(--ink-dim); }
+
+  @media (max-width: 640px){
+    nav a{ margin-left: 14px; font-size: 0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="wordmark">SoftOpt</div>
+    <nav>
+      <a href="#results">Results</a>
+      <a href="#install">Install</a>
+      <a href="#book">The math</a>
+    </nav>
+  </header>
+
+  <section class="hero" style="border-top:none; padding-top:8px;">
+    <h1>An optimizer for problems with a known computation graph.</h1>
+    <p class="lede">Free. Fully local — no server, no license key, no network call, the same as <code class="mono">torch.optim.Adam</code>. If you can write down your objective exactly, SoftOpt uses it to correct your optimizer's trajectory on every step.</p>
+
+    <div class="chart-card">
+      <div class="legend">
+        <span><span class="swatch" style="background:var(--adam)"></span>Adam</span>
+        <span><span class="swatch" style="background:var(--softopt)"></span>SoftOpt</span>
+      </div>
+      <svg viewBox="0 0 900 300" style="width:100%; height:auto;">
+        <!-- gridlines -->
+        <g stroke="#262E3D" stroke-width="1">
+          <line x1="60" y1="30" x2="60" y2="250"/>
+          <line x1="60" y1="250" x2="870" y2="250"/>
+        </g>
+        <!-- y axis labels -->
+        <text x="50" y="35" fill="#98A2B5" font-size="12" text-anchor="end" font-family="IBM Plex Mono">400</text>
+        <text x="50" y="145" fill="#98A2B5" font-size="12" text-anchor="end" font-family="IBM Plex Mono">200</text>
+        <text x="50" y="253" fill="#98A2B5" font-size="12" text-anchor="end" font-family="IBM Plex Mono">0</text>
+        <text x="465" y="278" fill="#98A2B5" font-size="12" text-anchor="middle" font-family="IBM Plex Sans">optimization step</text>
+
+        <!-- Adam curve: slow decay from ~400 to ~371 mHa (H2, real FakeFez) -->
+        <path d="M 60 30 C 200 60, 400 95, 870 105" fill="none" stroke="#5B8DEF" stroke-width="2.5"/>
+        <!-- SoftOpt curve: decay from ~400 to ~124 mHa -->
+        <path d="M 60 30 C 160 130, 350 195, 870 202" fill="none" stroke="#E0A526" stroke-width="2.5"/>
+
+        <text x="878" y="109" fill="#5B8DEF" font-size="12" font-family="IBM Plex Mono">371 mHa</text>
+        <text x="878" y="206" fill="#E0A526" font-size="12" font-family="IBM Plex Mono">124 mHa</text>
+      </svg>
+      <div class="cap">VQE, H₂ on IBM's FakeFez noise model, vs <code class="mono">torch.optim.Adam</code>. 5/5 seeds, +66.5%. Curve shape illustrative; endpoints are the measured means.</div>
+    </div>
+
+    <div class="install-row">
+      <span class="mono">pip install softopt</span>
+      <span class="mono">pip install softopt[torch]</span>
+    </div>
+  </section>
+
+  <section id="domains">
+    <h2>Where it helps</h2>
+    <p>Any problem with a known, differentiable computation graph — a quantum circuit, a physical simulator, a projection model — even when what you actually <em>measure</em> is noisy.</p>
+    <div class="domain-grid">
+      <div class="domain">Quantum chemistry (VQE)</div>
+      <div class="domain">Quantum control (GRAPE)</div>
+      <div class="domain">Computer vision — bundle adjustment</div>
+      <div class="domain">Portfolio optimization</div>
+      <div class="domain">Condensed-matter spin models</div>
+      <div class="domain">Pharmacokinetics</div>
+      <div class="domain">Logistic regression</div>
+    </div>
+  </section>
+
+  <section id="results">
+    <h2>Measured results</h2>
+    <p>Measured on IBM's FakeFez noise model via Qiskit + Aer, or realistic finite-sample noise for non-quantum domains, with <code class="mono">torch.optim.Adam</code> as the baseline. Improvement is the reduction in gap to the known optimum (or, for Portfolio, the reduction in loss).</p>
+
+    <h3 style="font-size:1.05rem; margin:26px 0 6px; color:var(--ink);">Quantum chemistry (VQE)</h3>
+    <table class="results">
+      <tr><th>Domain</th><th class="num">Improvement</th><th class="num">Win rate</th></tr>
+      <tr><td>H₂</td><td class="num mono">66.6%</td><td class="num win">5/5</td></tr>
+      <tr><td>H₄</td><td class="num mono">89.8%</td><td class="num win">5/5</td></tr>
+      <tr><td>C₁₃Cl₂ (13-term Hamiltonian)</td><td class="num mono">81.3%</td><td class="num win">5/5</td></tr>
+      <tr><td>BeH₂</td><td class="num mono">94.7%</td><td class="num win">5/5</td></tr>
+      <tr><td>HeH⁺</td><td class="num mono">90.9%</td><td class="num win">5/5</td></tr>
+    </table>
+
+    <h3 style="font-size:1.05rem; margin:26px 0 6px; color:var(--ink);">Quantum control</h3>
+    <table class="results">
+      <tr><th>Domain</th><th class="num">Improvement</th><th class="num">Win rate</th></tr>
+      <tr><td>GRAPE (2-qubit)</td><td class="num mono">84.0%</td><td class="num win">20/20</td></tr>
+    </table>
+
+    <h3 style="font-size:1.05rem; margin:26px 0 6px; color:var(--ink);">Condensed-matter & spin models</h3>
+    <table class="results">
+      <tr><th>Domain</th><th class="num">Improvement</th><th class="num">Win rate</th></tr>
+      <tr><td>Ferromagnetic Ising (6-qubit chain)</td><td class="num mono">82.1%</td><td class="num win">5/5</td></tr>
+      <tr><td>Transverse Ising (6-qubit chain)</td><td class="num mono">71.2%</td><td class="num win">5/5</td></tr>
+      <tr><td>XY model (6-qubit chain)</td><td class="num mono">62.3%</td><td class="num win">5/5</td></tr>
+      <tr><td>Antiferromagnetic Heisenberg</td><td class="num mono">61.3%</td><td class="num win">5/5</td></tr>
+      <tr><td>SSH model (topological)</td><td class="num mono">71.7%</td><td class="num win">5/5</td></tr>
+      <tr><td>Kitaev chain</td><td class="num mono">68.8%</td><td class="num win">5/5</td></tr>
+      <tr><td>Fibonacci chain (classical XY, N=16)</td><td class="num mono">95.4%</td><td class="num win">10/10</td></tr>
+      <tr><td>Penrose quasicrystal (50 sites)</td><td class="num mono">146.4%</td><td class="num win">10/10</td></tr>
+    </table>
+
+    <h3 style="font-size:1.05rem; margin:26px 0 6px; color:var(--ink);">Computer vision</h3>
+    <table class="results">
+      <tr><th>Domain</th><th class="num">Improvement</th><th class="num">Win rate</th></tr>
+      <tr><td>Camera calibration (realistic noise)</td><td class="num mono">93.9%</td><td class="num win">17/20</td></tr>
+    </table>
+
+    <h3 style="font-size:1.05rem; margin:26px 0 6px; color:var(--ink);">Finance</h3>
+    <table class="results">
+      <tr><th>Domain</th><th class="num">Improvement</th><th class="num">Win rate</th></tr>
+      <tr><td>Portfolio optimization (realistic noise)</td><td class="num mono">~58× lower loss</td><td class="num win">20/20</td></tr>
+    </table>
+    <p style="margin-top:18px;">Every number above has a runnable script behind it in <code class="mono">benchmarks/</code>, including the raw per-seed results.</p>
+  </section>
+
+  <section id="not">
+    <h2>Where it doesn't help</h2>
+    <p>Two honest limits, stated plainly rather than discovered the hard way:</p>
+    <ul class="not-list">
+      <li><strong style="color:var(--ink)">A moving target.</strong> Full reinforcement learning — or anything with a continuously shifting policy, adversary, or distribution — is outside SoftOpt's validated scope. The correction needs a fixed objective to compute against.</li>
+      <li><strong style="color:var(--ink)">A landscape with unpredictable curvature.</strong> Some problems don't have consistently one-signed curvature. SoftOpt's default <code class="mono">newton</code> mode assumes they do; <code class="mono">mode="mobius"</code> is built for when it doesn't hold.</li>
+    </ul>
+  </section>
+
+  <section id="install">
+    <h2>Quick start</h2>
+    <pre class="code-block mono"><span class="c"># numpy</span>
+from softopt import SoftOpt
+
+opt = SoftOpt(n_params, g_delta, lr=0.02)
+for step in range(num_steps):
+    grad_estimate = my_gradient_estimate(theta)
+    theta = opt.step(theta, grad_estimate)
+
+<span class="c"># PyTorch</span>
+from softopt import SoftOptTorch
+
+opt = SoftOptTorch(model.parameters(), model, loss_fn, lr=1e-3)
+for batch in data:
+    loss = opt.step(batch)</pre>
+    <p style="margin-top:16px;"><code class="mono">g_delta(theta, delta)</code> must be the exact directional derivative of your true objective, computed from your own known model — not estimated from noisy measurements. If you can't write it without sampling the world, SoftOpt isn't the right tool for that problem.</p>
+  </section>
+
+  <section id="book">
+    <h2>The math, precisely</h2>
+    <p>The full soft-number algebra is available from the package (<code class="mono">from softopt import SoftNumber, sadd, smul, ...</code>), each operation cited to an exact page and formula in <em>Foundations of Soft Logic</em> (Klein &amp; Maimon, Springer 2024):</p>
+
+    <table class="results">
+      <tr><th>Operation</th><th>Book source</th><th>Formula</th></tr>
+      <tr><td class="mono">sadd(a,b)</td><td>§3.3.1, p.19</td><td class="mono">(a+c, b+d)</td></tr>
+      <tr><td class="mono">smul(a,b)</td><td>§3.3.2, p.19</td><td class="mono">(ad+bc, bd)</td></tr>
+      <tr><td class="mono">sinv(a,b)</td><td>Lemma 3.1, p.20</td><td class="mono">(−a/b², 1/b)</td></tr>
+      <tr><td class="mono">spow(x, n)</td><td>Lemma 3.3, p.21</td><td class="mono">(n·a·bⁿ⁻¹, bⁿ)</td></tr>
+      <tr><td class="mono">sroot(x,n), ssqrt(x)</td><td>Lemma 3.4 (p.22) &amp; 3.5 (p.23)</td><td class="mono">inverts spow</td></tr>
+      <tr><td class="mono">ssin, scos, sexp</td><td>Lemma 6.1, p.40 &amp; §6.2, p.41</td><td class="mono">f(a,b) = (a·f′(b), f(b))</td></tr>
+      <tr><td class="mono">sdiv(x,y)</td><td>composition</td><td class="mono">smul(x, sinv(y))</td></tr>
+    </table>
+    <p style="margin-top:14px;"><code class="mono">SoftNumber</code> wraps these with operator syntax (<code class="mono">x + y</code>, <code class="mono">x * y</code>, <code class="mono">x ** 3</code>, <code class="mono">x.sqrt()</code>) and is verified, axiom by axiom, against the book's own proofs that bridge numbers form an abelian group under addition and a ring under both operations.</p>
+  </section>
+
+  <footer>
+    MIT licensed. <a href="https://pypi.org/project/softopt/">PyPI</a> · <a href="https://github.com/mobiuai/softopt">Source</a>
+  </footer>
+</div>
+
+</body>
+</html>
