@@ -44,6 +44,14 @@ def soft_compile(model_fn, n_params=None, verify=True, verify_tol=1e-5):
                 "operation in it discarded them (e.g. float(), np.array(...), "
                 "or comparison-based rounding)"
             )
+        if np.iscomplexobj(result.a) or np.iscomplexobj(result.b):
+            raise ValueError(
+                f"the model left the real domain at this point (value "
+                f"{result.b}, derivative {result.a}) -- typically a fractional "
+                "power or an even root of a negative number. SoftOpt works with "
+                "real-valued models; keep the parameters inside the region where "
+                "yours is defined."
+            )
         if np.any(np.isinf([result.a, result.b])) or np.any(np.isnan([result.a, result.b])):
             raise FloatingPointError(
                 f"the model produced a non-finite value ({result.b}) or "

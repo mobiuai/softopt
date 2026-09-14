@@ -181,3 +181,17 @@ def test_non_finite_derivative_is_rejected_at_run_time():
     g = soft_compile(edge, n_params=2)
     with pytest.raises(FloatingPointError):
         g(np.array([900.0, 1.0]), np.array([1.0, 0.0]))
+
+
+def test_complex_result_is_rejected():
+    """A fractional power of a negative leaves the real domain; the derivative
+    must not come back complex and end up in the parameters."""
+    def m(p):
+        x, = p
+        return x ** 2.5 + x ** -1
+
+    g = soft_compile(m, n_params=1)
+    with pytest.raises(ValueError, match="left the real domain"):
+        g(np.array([-1.0]), np.array([1.0]))
+    # the region where the model is defined is unaffected
+    assert np.isfinite(g(np.array([2.0]), np.array([1.0])))
