@@ -43,6 +43,24 @@ If your problem has a **known computation graph** — a quantum circuit, a physi
 
 Full reinforcement learning (or anything else with a continuously **moving target** — a policy, an adversary, a non-stationary distribution) is outside SoftOpt's validated scope. The mechanism needs a *fixed* objective to compute a meaningful correction against; a moving target breaks that assumption. Use plain Adam/SGD there.
 
+**Barren plateaus.** In a deep hardware-efficient circuit at random
+initialisation, the gradient decays exponentially in the qubit count and the
+shot-noise measurement of it is larger than the thing it measures. An exact
+derivative still helps there — it comes from the circuit, so it stays exact
+however flat the landscape gets — but it does not remove the barrier.
+
+We measured this at 4–10 qubits on a transverse-field Ising chain: SoftOpt
+covers **1.4–1.6× as much of the distance to the ground state** as Adam, and
+that ratio held across three seed streams, five shot budgets (512 to 65536),
+five SPSA probe sizes and three different Hamiltonians — 316 wins in 320 runs
+across 16 conditions. The advantage *grows* as the measurement degrades, which
+is the mechanism.
+
+But at 10 qubits both arms covered only a few percent of the way to the ground
+state. 1.5× of very little is still very little. **If the plateau is your
+problem, this is not the fix.** The scan and its replication are in
+`benchmarks/barren_plateau/`.
+
 ## Installation
 
 ```bash

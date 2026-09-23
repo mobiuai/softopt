@@ -356,10 +356,25 @@
 
   <section id="not">
     <h2>Where it doesn't help</h2>
-    <p>Two honest limits, stated plainly rather than discovered the hard way:</p>
+    <p>Three honest limits, stated plainly rather than discovered the hard way:</p>
     <ul class="not-list">
       <li><strong style="color:var(--ink)">A moving target.</strong> Full reinforcement learning — or anything with a continuously shifting policy, adversary, or distribution — is outside SoftOpt's validated scope. The correction needs a fixed objective to compute against.</li>
       <li><strong style="color:var(--ink)">A landscape with unpredictable curvature.</strong> The correction assumes the curvature along a random direction is consistently one-signed — true across the physics, circuit and engineering problems tested here. Where it isn't, the correction stops helping.</li>
+      <li><strong style="color:var(--ink)">A barren plateau.</strong> In a deep
+      circuit at random initialisation the gradient decays exponentially in the
+      qubit count, and the shot-noise measurement of it is larger than what it
+      measures. An exact derivative still helps — it comes from the circuit, so
+      it stays exact however flat the landscape gets. Measured at 4–10 qubits,
+      SoftOpt covers <strong style="color:var(--softopt)">1.4–1.6×</strong> as
+      much of the distance to the ground state as Adam, and that ratio held
+      across 16 conditions: three seed streams, five shot budgets, five probe
+      sizes, three Hamiltonians — 316 wins in 320 runs. The advantage grows as
+      the measurement degrades.
+      <br><br>
+      But at 10 qubits both arms covered only a few percent of the way.
+      1.5× of very little is still very little. <strong
+      style="color:var(--ink)">If the plateau is your problem, this is not the
+      fix.</strong></li>
     </ul>
   </section>
 
