@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: softopt
-Version: 0.5.7
+Version: 0.5.8
 Summary: A standalone optimizer for problems with a known computation graph, built on Klein–Maimon soft-number calculus
 Author: Ido Angel
 License: MIT
@@ -142,6 +142,12 @@ A correction fed a non-genuine value does not merely help less — it lands abou
 cd benchmarks/grape && python3 causal_ablation.py --seeds 1000
 python3 tests/test_causal.py          # the same test, smaller and faster
 ```
+
+### Two interfaces to the same algebra
+
+`SoftNumber` gives you operator syntax (`x * y`, `x.exp()`) and is what `soft_compile` traces your model with. The tuple functions (`smul`, `sadd`, `ssin`, ...) are the same operations applied to whole numpy arrays at once, which is what the benchmark engines use — a quantum circuit propagates 2ⁿ amplitudes per gate, and one Python object per amplitude would not be workable.
+
+They are the same algebra and produce identical numbers; `tests/test_causal.py` asserts that agreement to 1e-15 across every operation, and also asserts that soft-number operations actually fire during an optimizer step.
 
 ## The math
 

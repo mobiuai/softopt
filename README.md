@@ -4,6 +4,30 @@
 
 Each step is an update followed by an exact Newton correction computed from your own model, through Klein–Maimon soft-number calculus (*Foundations of Soft Logic*, Klein & Maimon, Springer 2024). Free, open source, and runs locally.
 
+## Is SoftOpt the right tool for your problem?
+
+One question decides it, and you can answer it without running anything.
+
+**Can you get a residual vector?** That is: can you compute
+`model(theta) - data` and get back an *array*, rather than a single number?
+
+- **Yes** → use `scipy.optimize.least_squares`. It builds the full Jacobian and
+  exploits the least-squares structure, and it will beat SoftOpt on both
+  accuracy and speed. This holds regardless of how large or how noisy the
+  problem is. We measured it: on solar-cell parameter extraction, `least_squares`
+  reached 7.9 mA against SoftOpt's 37.3 mA, and did it 21x faster.
+
+- **No** → SoftOpt is built for this case. Each evaluation returns **one number,
+  and it is noisy**: a quantum measurement, a laser-tracker sweep, a backtest, a
+  simulator that returns a score. There is no residual vector for
+  `least_squares` to work with, and finite-difference methods like L-BFGS-B end
+  up differentiating the noise rather than the model.
+
+SoftOpt's advantage comes from taking the derivative **from your model** instead
+of from your measurements. That only matters when the measurements are the noisy
+part. Every validated domain below is of the second kind; that is not a
+convenience of selection, it is where the mechanism applies.
+
 ## Where it helps
 
 If your problem has a **known computation graph** — a quantum circuit, a physical simulator, a projection or measurement model, anything you can write down exactly, even if the *measurements* of it are noisy — SoftOpt computes an exact directional derivative of that model on every step, plus the curvature along the same direction, and uses them to correct the optimizer's trajectory. Validated, with real hardware-noise-model data, across:

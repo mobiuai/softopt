@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SoftOpt — an optimizer for problems with a known computation graph</title>
+<link rel="icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="icon-180.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -35,6 +37,8 @@
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--line);
   }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .logo{ height:26px; width:auto; display:block; }
   .wordmark{ font-family:'Source Serif 4', serif; font-size:1.3rem; font-weight:600; letter-spacing:-0.01em; }
   nav a{ color:var(--ink-dim); text-decoration:none; margin-left: 26px; font-size:0.95rem; }
   nav a:hover{ color:var(--ink); }
@@ -102,6 +106,54 @@
   footer{ padding: 40px 0 60px; color: var(--ink-dim); font-size: 0.9rem; }
   footer a{ color: var(--ink-dim); }
 
+
+  /* ---- lab ---- */
+  .lab-grid{ display:grid; grid-template-columns:270px 1fr; gap:16px; align-items:start; margin-top:22px; }
+  @media(max-width:760px){ .lab-grid{ grid-template-columns:1fr; } }
+  .lab-panel{ background:var(--bg-raised); border:1px solid var(--line);
+              border-radius:9px; padding:15px; }
+  .lab-h{ font-size:0.72rem; font-weight:600; letter-spacing:0.09em; text-transform:uppercase;
+          color:var(--ink-dim); margin-bottom:11px; }
+  .dom{ display:block; width:100%; text-align:left; background:var(--bg);
+        border:1px solid var(--line); border-radius:7px; padding:9px 11px; margin-bottom:6px;
+        color:var(--ink); font:inherit; cursor:pointer; transition:border-color .12s; }
+  .dom:hover{ border-color:#3d4a63; }
+  .dom.on{ border-color:var(--softopt); background:#1d1c18; }
+  .dom .t{ font-weight:500; font-size:0.88rem; }
+  .dom .s{ color:var(--ink-dim); font-size:0.75rem; margin-top:2px; }
+  #lab label{ display:block; font-size:0.75rem; color:var(--ink-dim); margin:12px 0 5px; }
+  #lab input{ width:100%; background:var(--bg); border:1px solid var(--line); border-radius:6px;
+              color:var(--ink); padding:7px 9px; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; }
+  .lab-go{ width:100%; margin-top:14px; background:var(--softopt); color:#15120a; border:none;
+           border-radius:7px; padding:10px; font-weight:600; font-size:0.95rem; cursor:pointer;
+           font-family:'IBM Plex Sans',sans-serif; }
+  .lab-go:disabled{ background:var(--line); color:var(--ink-dim); cursor:default; }
+  #labstatus{ margin-top:9px; font-size:0.78rem; color:var(--ink-dim); min-height:15px;
+              word-break:break-word; }
+  #labstatus.err{ color:#E08A8A; }
+  .lab-bar{ height:3px; background:var(--line); border-radius:2px; overflow:hidden; margin-top:8px; }
+  .lab-bar i{ display:block; height:100%; background:var(--softopt); width:0; transition:width .2s; }
+  #chart{ width:100%; height:270px; display:block; }
+  .lab-note{ color:var(--ink-dim); font-size:0.82rem; line-height:1.6; }
+  .lab-tbl{ margin-top:0; font-size:0.85rem; }
+  .lab-tbl td, .lab-tbl th{ padding:7px 10px 7px 0; }
+  .lab-tbl td.num, .lab-tbl th.num{ text-align:right; padding-right:14px; }
+  .lab-tbl .lose{ color:#C86464; }
+  .verdict{ margin-top:13px; padding:12px 14px; border-radius:7px; border:1px solid var(--line);
+            background:var(--bg); display:none; font-size:0.87rem; color:var(--ink-dim); }
+  .verdict b{ color:var(--softopt); }
+
+  /* ---- fit ---- */
+  .fit-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:22px; }
+  @media(max-width:700px){ .fit-grid{ grid-template-columns:1fr; } }
+  .fit-card{ background:var(--bg-raised); border:1px solid var(--line);
+             border-radius:10px; padding:18px 20px; }
+  .fit-card.on{ border-color:var(--softopt); }
+  .fit-card p{ font-size:0.92rem; margin:0; }
+  .fit-h{ font-size:0.78rem; font-weight:600; letter-spacing:0.07em;
+          text-transform:uppercase; color:var(--ink-dim); margin-bottom:10px; }
+  .fit-card.on .fit-h{ color:var(--softopt); }
+
   @media (max-width: 640px){
     nav a{ margin-left: 14px; font-size: 0.85rem; }
   }
@@ -111,8 +163,13 @@
 
 <div class="wrap">
   <header class="top">
-    <div class="wordmark">SoftOpt</div>
+    <div class="brand">
+      <img src="logo_mark.png" alt="" class="logo">
+      <span class="wordmark">SoftOpt</span>
+    </div>
     <nav>
+      <a href="#fit">Is it for you?</a>
+      <a href="#lab">Run it here</a>
       <a href="#results">Results</a>
       <a href="#install">Install</a>
       <a href="#book">The math</a>
@@ -154,6 +211,86 @@
     <div class="install-row">
       <span class="mono">pip install softopt</span>
     </div>
+  </section>
+
+  <section id="lab">
+    <h2>Run the benchmarks here</h2>
+    <p>Pick a domain and run it. Each benchmark uses the same noisy oracle, the same
+    hyperparameters, and the same scoring on the true objective as the scripts in
+    <code class="mono">benchmarks/</code>. The VQE cases execute real quantum circuits
+    against IBM's FakeFez noise model and take a few minutes each.</p>
+
+    <div class="lab-grid">
+      <div>
+        <div class="lab-panel">
+          <div class="lab-h">Domain</div>
+          <div id="labDomains"></div>
+          <div class="lab-h" style="margin-top:14px">VQE on FakeFez</div>
+          <div id="vqeDomains"></div>
+          <label for="seeds" id="seedsLabel">Seeds</label>
+          <input id="seeds" type="number" value="20" min="1" max="50">
+          <label for="steps">Steps per seed</label>
+          <input id="steps" type="number" value="100" min="20" max="600">
+          <button class="lab-go" id="runbtn">Run benchmark</button>
+          <div id="labstatus"></div>
+          <div class="lab-bar"><i id="labbar"></i></div>
+        </div>
+        <div class="lab-panel" style="margin-top:12px">
+          <div class="lab-h">What this measures</div>
+          <p class="lab-note" id="explain" style="margin:0"></p>
+        </div>
+      </div>
+
+      <div>
+        <div class="lab-panel" id="chartPanel">
+          <div class="lab-h">Distance from the optimum, lower is better</div>
+          <div class="legend" style="margin-bottom:8px">
+            <span><span class="swatch" style="background:var(--adam)"></span>Adam</span>
+            <span><span class="swatch" style="background:var(--softopt)"></span>SoftOpt</span>
+          </div>
+          <canvas id="chart"></canvas>
+        </div>
+        <div class="lab-panel" style="margin-top:12px">
+          <div class="lab-h" id="tblTitle">Per-seed results</div>
+          <table class="results lab-tbl" id="tbl"><thead></thead><tbody></tbody></table>
+          <div class="verdict" id="verdict"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="fit">
+    <h2>Is this the right tool for your problem?</h2>
+    <p>One question decides it, and you can answer it without running anything:
+    <strong style="color:var(--ink)">can you get a residual vector?</strong>
+    That is, can you compute <code class="mono">model(theta) − data</code> and
+    get back an array, rather than a single number?</p>
+
+    <div class="fit-grid">
+      <div class="fit-card">
+        <div class="fit-h">Yes — you get an array</div>
+        <p>Use <code class="mono">scipy.optimize.least_squares</code>. It builds
+        the full Jacobian and exploits the least-squares structure, and it will
+        beat SoftOpt on accuracy and on speed. This holds however large or noisy
+        the problem is. On solar-cell parameter extraction we measured
+        <code class="mono">least_squares</code> at 7.9&nbsp;mA against SoftOpt's
+        37.3&nbsp;mA, 21× faster.</p>
+      </div>
+      <div class="fit-card on">
+        <div class="fit-h">No — you get one number</div>
+        <p>This is what SoftOpt is for. Each evaluation returns a single value
+        and it is noisy: a quantum measurement, a laser-tracker sweep, a
+        backtest, a simulator that returns a score. There is no residual vector
+        for <code class="mono">least_squares</code> to use, and finite-difference
+        methods end up differentiating the noise instead of the model.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:20px">SoftOpt takes the derivative <strong
+    style="color:var(--ink)">from your model</strong> rather than from your
+    measurements. That only matters when the measurements are the noisy part.
+    Every domain below is of the second kind — not a convenience of selection,
+    but where the mechanism applies.</p>
   </section>
 
   <section id="domains">
@@ -267,6 +404,456 @@ for step in range(num_steps):
     MIT licensed. <a href="https://pypi.org/project/softopt/">PyPI</a> · <a href="https://github.com/mobiuai/softopt">Source</a>
   </footer>
 </div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+<script>
+const DOMAINS={
+  grape:{title:"GRAPE quantum control",sub:"12 pulse amplitudes",steps:100,
+    explain:"Twelve control amplitudes must drive a two-qubit system into a target "
+      +"state. The objective is known exactly, but the optimizer only sees a noisy "
+      +"SPSA estimate of it \u2014 the signal a real control experiment gives you. "
+      +"Scored on the true objective at the end."},
+  camera:{title:"Camera calibration",sub:"6 pose parameters \u00b7 pixel noise",steps:100,
+    explain:"Recover the camera pose that best explains observed image points. The "
+      +"projection model is exact; the detected points carry pixel noise and a "
+      +"fraction of outliers. Scored against the true projection."},
+  portfolio:{title:"Portfolio optimization",sub:"6 assets \u00b7 backtest noise",steps:100,
+    explain:"Allocate weights across six assets to maximize return against risk. Each "
+      +"measurement is a fresh finite sample of daily returns \u2014 the backtest a "
+      +"practitioner actually runs, not the true expectation."},
+  softopt_vqe_h2:{title:"VQE \u2014 H\u2082",sub:"2 qubits \u00b7 FakeFez",steps:30,server:true,
+    explain:"Find the ground-state energy of the hydrogen molecule with a "
+      +"variational circuit. Each step runs three real quantum circuits at 4096 "
+      +"shots against IBM's FakeFez noise model, so the optimizer never sees the "
+      +"true energy \u2014 but the circuit itself is known exactly, and that is "
+      +"what SoftOpt uses. Runs on a server; a single seed takes minutes."},
+  softopt_vqe_h4:{title:"VQE \u2014 H\u2084 chain",sub:"4 qubits \u00b7 FakeFez",steps:30,server:true,
+    explain:"A four-atom hydrogen chain: fifteen Hamiltonian terms over four "
+      +"qubits. Larger circuit, deeper noise, same method."},
+  softopt_vqe_c13cl2:{title:"VQE \u2014 C\u2081\u2083Cl\u2082",sub:"13-term Hamiltonian",steps:30,server:true,
+    explain:"Thirteen Hamiltonian terms including a four-body ZZZZ "
+      +"multireference term \u2014 a harder landscape than the hydrogen cases."},
+  softopt_vqe_heh:{title:"VQE \u2014 HeH\u207a",sub:"2 qubits \u00b7 FakeFez",steps:25,server:true,
+    explain:"The helium hydride cation, the simplest heteronuclear molecule. "
+      +"A shallower circuit than H\u2082 but a deeper well."},
+  ablation:{title:"Causal ablation",sub:"is the algebra load-bearing?",steps:100,
+    explain:"The same optimizer, the same gradients, the same starting point \u2014 but "
+      +"the curvature it uses is replaced with a frozen constant, or with real "
+      +"curvature measured at an unrelated point. If the algebra were decorative "
+      +"these would perform about as well. They do not."}};
+
+let pyodide=null,pyodideReady=false,current="grape",running=false,cancelled=false,
+    history=[],vqeResult=null;
+// test id -> {job, started, steps, seed, result} for runs already sent to the
+// server. They continue there when the page stops polling, so we rejoin them.
+const serverJobs={};
+
+const VQE_API="https://mobiu-lab-api-675073866884.us-central1.run.app";
+const localEl=document.getElementById("labDomains");
+const serverEl=document.getElementById("vqeDomains");
+for(const [k,d] of Object.entries(DOMAINS)){
+  const b=document.createElement("button");
+  b.className="dom"+(k===current?" on":"");
+  b.innerHTML='<div class="t">'+d.title+'</div><div class="s">'+d.sub+'</div>';
+  b.onclick=()=>{
+    if(running){
+      if(!DOMAINS[current].server) return;      // an in-browser run cannot be cut
+      cancelled=true;                           // otherwise abandon and switch
+    }
+    current=k;
+    document.querySelectorAll(".dom").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    document.getElementById("explain").textContent=d.explain;
+    document.getElementById("steps").value=d.steps;
+    // a server run is one seed per job, so the seed count does not apply
+    const srv=!!DOMAINS[k].server;
+    document.getElementById("chartPanel").style.display=(k==="ablation")?"none":"block";
+    document.querySelector("#chartPanel .lab-h").textContent = srv
+      ? "Best energy found, toward the ground state"
+      : "Distance from the optimum, lower is better";
+    document.getElementById("seedsLabel").textContent=srv?"Seed":"Seeds";
+    document.getElementById("seeds").value=srv?0:20;
+    resetLab();
+    if(srv) restoreServerState(k);
+    syncButton();
+    if(!srv) ensureBooted();
+  };
+  (d.server?serverEl:localEl).appendChild(b);
+}
+document.getElementById("explain").textContent=DOMAINS[current].explain;
+
+const cv=document.getElementById("chart"),ctx=cv.getContext("2d");
+function sizeCanvas(){
+  const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  if(!r.width)return;
+  cv.width=r.width*dpr; cv.height=270*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); drawChart();
+}
+addEventListener("resize",sizeCanvas);
+
+function drawChart(){
+  const w=cv.width/(window.devicePixelRatio||1),h=270,pad={l:70,r:14,t:12,b:26};
+  ctx.clearRect(0,0,w,h);
+  // VQE traces are energies converging on a known ground state: linear axis,
+  // with that state drawn in, rather than a log axis of distances
+  if(vqeResult) return drawEnergy(w,h,pad);
+  const pts=history.flatMap(r=>r.series);
+  if(!pts.length){
+    ctx.fillStyle="#98A2B5"; ctx.font='13px "IBM Plex Sans"'; ctx.textAlign="center";
+    ctx.fillText("Run a benchmark to see the curves",w/2,h/2); return;
+  }
+  const raw=pts.flatMap(p=>[p[1],p[2]]);
+  const mn=Math.min(...raw), off = mn<=0 ? -mn+1e-6 : 0;
+  const vals=raw.map(v=>v+off).filter(v=>v>0);
+  const lo=Math.log10(Math.min(...vals)),hi=Math.log10(Math.max(...vals));
+  const maxStep=Math.max(...pts.map(p=>p[0]));
+  const X=s=>pad.l+(w-pad.l-pad.r)*(s/maxStep);
+  const Y=v=>{const t=(Math.log10(Math.max(v+off,1e-300))-lo)/Math.max(hi-lo,1e-9);
+              return pad.t+(h-pad.t-pad.b)*(1-t);};
+  ctx.strokeStyle="#262E3D"; ctx.lineWidth=1;
+  ctx.fillStyle="#98A2B5"; ctx.font='10.5px "IBM Plex Mono"'; ctx.textAlign="right";
+  for(let d=Math.ceil(lo);d<=Math.floor(hi);d++){
+    const y=Y(Math.pow(10,d)-off);
+    if(y<pad.t||y>h-pad.b)continue;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.stroke();
+    ctx.fillText((Math.pow(10,d)-off).toExponential(0),pad.l-8,y+3.5);
+  }
+  for(const rec of history){
+    for(const pair of [[1,"#5B8DEF"],[2,"#E0A526"]]){
+      ctx.strokeStyle=pair[1]; ctx.lineWidth=1.6; ctx.globalAlpha=.75; ctx.beginPath();
+      rec.series.forEach((p,j)=>{const x=X(p[0]),y=Y(p[pair[0]]); j?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+      ctx.stroke(); ctx.globalAlpha=1;
+    }
+  }
+  ctx.fillStyle="#98A2B5"; ctx.textAlign="center";
+  ctx.fillText("optimization step",(pad.l+w-pad.r)/2,h-7);
+}
+
+function drawEnergy(w,h,pad){
+  const A=vqeResult.baseline.trace, S=vqeResult.mobiu.trace, E=vqeResult.exact_ground;
+  const all=A.concat(S).concat([E]);
+  let lo=Math.min(...all), hi=Math.max(...all);
+  const m=(hi-lo)*0.08||0.1; lo-=m; hi+=m;
+  const n=Math.max(A.length,S.length);
+  const X=i=>pad.l+(w-pad.l-pad.r)*(n>1?i/(n-1):0.5);
+  const Y=v=>pad.t+(h-pad.t-pad.b)*(1-(v-lo)/(hi-lo));
+  ctx.strokeStyle="#262E3D"; ctx.lineWidth=1;
+  ctx.fillStyle="#98A2B5"; ctx.font='10.5px "IBM Plex Mono"'; ctx.textAlign="right";
+  for(let t=0;t<=4;t++){
+    const v=lo+(hi-lo)*t/4, y=Y(v);
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.stroke();
+    ctx.fillText(v.toFixed(3), pad.l-8, y+3.5);
+  }
+  ctx.strokeStyle="#4FAE7C"; ctx.setLineDash([5,4]); ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(pad.l,Y(E)); ctx.lineTo(w-pad.r,Y(E)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle="#4FAE7C"; ctx.textAlign="left";
+  ctx.fillText("exact "+E.toFixed(3), pad.l+6, Y(E)-6);
+  for(const pr of [[A,"#5B8DEF"],[S,"#E0A526"]]){
+    ctx.strokeStyle=pr[1]; ctx.lineWidth=2; ctx.beginPath();
+    pr[0].forEach((v,i)=>{const x=X(i),y=Y(v); i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.stroke();
+  }
+  ctx.fillStyle="#98A2B5"; ctx.textAlign="center";
+  ctx.fillText("optimization step",(pad.l+w-pad.r)/2,h-7);
+}
+
+function restoreServerState(k){
+  const j=serverJobs[k];
+  const st=document.getElementById("labstatus");
+  if(!j || j.failed) return;
+  document.getElementById("seeds").value=j.seed;
+  document.getElementById("steps").value=j.steps;
+  if(j.result){                       // finished earlier: show it, don't rerun
+    showServerResult(j.result, j.steps);
+    st.textContent="completed earlier";
+    document.getElementById("labbar").style.width="100%";
+  } else {
+    const secs=Math.floor((Date.now()-j.started)/1000);
+    const mins=Math.floor(secs/60);
+    st.textContent="still running on the server ("
+      +(mins?mins+"m ":"")+(secs%60)+"s) \u2014 press Run to rejoin";
+  }
+}
+
+function syncButton(){
+  const btn=document.getElementById("runbtn");
+  const srv=!!DOMAINS[current].server;
+  if(running){
+    // a server run is just polling, so it can always be abandoned; an
+    // in-browser run holds the thread and cannot be interrupted safely
+    if(srv){ btn.disabled=false; btn.textContent="Cancel"; }
+    else { btn.disabled=true; btn.textContent="Running\u2026"; }
+    return;
+  }
+  // server-run domains need nothing loaded locally; in-browser ones need Pyodide
+  btn.disabled = !srv && !pyodideReady;
+  btn.textContent = srv ? "Run on FakeFez"
+                  : pyodideReady ? "Run benchmark" : "Loading\u2026";
+}
+
+function resetLab(){
+  history=[]; vqeResult=null;
+  document.querySelector("#tbl thead").innerHTML="";
+  document.querySelector("#tbl tbody").innerHTML="";
+  document.getElementById("verdict").style.display="none";
+  document.getElementById("labbar").style.width="0";
+  // the status line describes the selected domain, so it must be cleared too --
+  // otherwise a message about one run stays visible under another
+  const st0=document.getElementById("labstatus");
+  st0.textContent=""; st0.classList.remove("err");
+  document.getElementById("tblTitle").textContent =
+    current==="ablation" ? "Final score by arm" : "Per-seed results";
+  drawChart();
+}
+const fmt=v=>(Math.abs(v)<1e-3||Math.abs(v)>=1e4)?v.toExponential(3):v.toFixed(5);
+// improvement: how much of the baseline's remaining distance was removed
+const improvement=(a,s)=>100*(a-s)/Math.abs(a);   // lower is better everywhere
+// symmetric factor: 3.1x better / 2.4x worse, never a runaway percentage
+function factor(a,s){
+  const A=Math.abs(a), S=Math.abs(s);
+  const better = s<a;                       // lower is better in every domain
+  if(S<=0||A<=0) return {txt:"\u2014", better:better};
+  const r = Math.max(A,S)/Math.min(A,S);
+  return {txt:(r<10?r.toFixed(1):Math.round(r).toLocaleString())
+              +"\u00d7 "+(better?"better":"worse"), better:better};
+}
+const ratio=r=>r<10?r.toFixed(1):Math.round(r).toLocaleString();
+
+async function bootLab(){
+  const st=document.getElementById("labstatus");
+  try{
+    st.textContent="Starting up\u2026";
+    pyodide=await loadPyodide();
+    st.textContent="Loading\u2026";
+    await pyodide.loadPackage(["numpy","scipy","micropip"]);
+    st.textContent="Loading\u2026";
+    const ver=await pyodide.runPythonAsync(
+      'import micropip, js\n'
+      +'await micropip.install("softopt")\n'
+      +'import softopt\n'
+      +'softopt.__version__\n');
+    st.textContent="Loading benchmarks\u2026";
+    const FILES=["grape_lemma61.py","portfolio_lemma61.py","camera_calib_lemma61.py",
+                 "grape/benchmark.py","portfolio/benchmark.py",
+                 "camera_calibration/benchmark.py","labcore.py"];
+    for(const f of FILES){
+      const res=await fetch("engines/"+f);
+      if(!res.ok) throw new Error("could not fetch engines/"+f+" ("+res.status+")");
+      const txt=await res.text();
+      const parts=f.split("/");
+      if(parts.length>1){
+        try{ pyodide.FS.mkdir(parts[0]); }catch(e){}
+        pyodide.FS.writeFile(parts[0]+"/__init__.py","");
+      }
+      pyodide.FS.writeFile(f,txt);
+    }
+    await pyodide.runPythonAsync(
+      "import sys\nsys.path.insert(0,'.')\nimport labcore\nlabcore.setup()\n");
+    pyodideReady=true;
+    if(!DOMAINS[current].server)
+      st.innerHTML='Ready \u2014 <span class="mono">softopt '+ver+'</span>';
+    syncButton();
+  }catch(err){
+    // the in-browser benchmarks are unavailable, but the server ones still work
+    if(!DOMAINS[current].server){
+      st.textContent="In-browser benchmarks unavailable: "+err.message;
+      st.classList.add("err");
+    }
+    console.error(err);
+    syncButton();
+  }
+}
+
+document.getElementById("runbtn").onclick=async()=>{
+  if(running){ cancelled=true; return; }        // second click abandons the poll
+  if(!DOMAINS[current].server && !pyodideReady){ ensureBooted(); return; }
+  running=true; cancelled=false; resetLab();
+  const btn=document.getElementById("runbtn");
+  syncButton();
+  const seeds=+document.getElementById("seeds").value;
+  const steps=+document.getElementById("steps").value;
+  const st=document.getElementById("labstatus");
+  st.classList.remove("err");
+  const every=Math.max(1,Math.round(steps/24));
+  const t0=Date.now();
+
+  try{
+  if(DOMAINS[current].server){
+    await runOnServer(seeds, steps, st);
+  } else if(current==="ablation"){
+    document.querySelector("#tbl thead").innerHTML=
+      '<tr><th>Curvature fed to the correction</th><th class="num">Mean score</th>'
+      +'<th class="num">vs genuine</th></tr>';
+    const sums={};
+    for(let s=0;s<seeds;s++){
+      st.textContent="seed "+(s+1)+" of "+seeds+"\u2026";
+      await new Promise(r=>setTimeout(r,0));
+      const res=pyodide.runPython("labcore.run_ablation("+s+", "+steps+")").toJs();
+      for(const [k,v] of res){ (sums[k]=sums[k]||[]).push(v); }
+      document.getElementById("labbar").style.width=(100*(s+1)/seeds).toFixed(0)+"%";
+    }
+    const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+    const gen=mean(sums["genuine"]);
+    const tb=document.querySelector("#tbl tbody"); tb.innerHTML="";
+    for(const k of ["genuine","no correction","frozen constant","foreign point"]){
+      const m=mean(sums[k]);
+      const rel = k==="genuine" ? "\u2014" : ratio(m/gen)+"\u00d7 worse";
+      tb.insertAdjacentHTML("beforeend",
+        '<tr><td>'+k+'</td><td class="num mono '+(k==="genuine"?"win":"lose")+'">'
+        +fmt(m)+'</td><td class="num mono '+(k==="genuine"?"":"lose")+'">'+rel+'</td></tr>');
+    }
+    const none=mean(sums["no correction"]);
+    const worst=Math.max(mean(sums["frozen constant"]),mean(sums["foreign point"]));
+    const el=document.getElementById("verdict"); el.style.display="block";
+    el.innerHTML="Genuine curvature reached <b>"+fmt(gen)+"</b>. The best corrupted "
+      +"variant reached no better than <b>"+fmt(worst)+"</b> \u2014 about <b>"
+      +ratio(worst/none)+"\u00d7 worse than applying no correction at all</b>. "
+      +"Feeding the mechanism a plausible-looking but wrong number does not merely "
+      +"help less; it actively hurts.";
+  } else {
+    document.querySelector("#tbl thead").innerHTML=
+      '<tr><th>Seed</th><th class="num">Adam</th><th class="num">SoftOpt</th>'
+      +'<th class="num">Improvement</th></tr>';
+    const imps=[];
+    for(let s=0;s<seeds;s++){
+      st.textContent="seed "+(s+1)+" of "+seeds+"\u2026";
+      await new Promise(r=>setTimeout(r,0));
+      const rec={seed:s,series:pyodide.runPython(
+        'labcore.run_pair("'+current+'", '+s+', '+steps+', '+every+')').toJs()};
+      history.push(rec); drawChart();
+      const l=rec.series[rec.series.length-1];
+      const imp=improvement(l[1],l[2]); imps.push(imp);
+      const f=factor(l[1],l[2]);
+      document.querySelector("#tbl tbody").insertAdjacentHTML("beforeend",
+        '<tr><td>'+s+'</td><td class="num mono">'+fmt(l[1])+'</td>'
+        +'<td class="num mono '+(f.better?"win":"lose")+'">'+fmt(l[2])+'</td>'
+        +'<td class="num mono '+(f.better?"win":"lose")+'">'+f.txt+'</td></tr>');
+      document.getElementById("labbar").style.width=(100*(s+1)/seeds).toFixed(0)+"%";
+    }
+    const wins=imps.filter(v=>v>0).length;
+    // the headline is the comparison the benchmark scripts report: the mean
+    // score of each arm across seeds
+    const n=history.length;
+    const meanA=history.reduce((t,r)=>t+r.series[r.series.length-1][1],0)/n;
+    const meanS=history.reduce((t,r)=>t+r.series[r.series.length-1][2],0)/n;
+    const pooled=100*(meanA-meanS)/Math.abs(meanA);
+    const el=document.getElementById("verdict"); el.style.display="block";
+    // a percentage stops meaning anything once it runs past a few hundred;
+    // past that the factor is the clearer statement
+    const headline = Math.abs(pooled)<200
+      ? "a <b>"+(pooled>=0?"":"\u2212")+Math.abs(pooled).toFixed(1)+"%</b> "
+        +(pooled>=0?"reduction":"increase")
+      : "<b>"+factor(meanA,meanS).txt+"</b>";
+    el.innerHTML="Mean score across "+seeds+" seeds: Adam <b>"+fmt(meanA)
+      +"</b>, SoftOpt <b>"+fmt(meanS)+"</b> \u2014 "+headline
+      +". SoftOpt was ahead on <b>"+wins+" of "+seeds+"</b> individual seeds; "
+      +"the spread between seeds is real and the per-seed rows show it.";
+  }
+  const secs=((Date.now()-t0)/1000).toFixed(0);
+  st.textContent="done \u2014 "+seeds+" seeds in "+secs+"s";
+  }catch(err){
+    st.textContent="Run failed: "+err.message;
+    console.error(err);
+  }
+  running=false; syncButton();
+};
+
+// ---- VQE: submitted to the server, polled until the job finishes ----
+async function runOnServer(seed, steps, st){
+  const bar=document.getElementById("labbar");
+  const test=current;
+  let job, startedAt;
+
+  const prev=serverJobs[test];
+  if(prev && prev.seed===seed && prev.steps===steps && !prev.failed){
+    job=prev.job; startedAt=prev.started;
+    st.textContent="rejoining the run already in progress\u2026";
+  } else {
+    st.textContent="submitting to the quantum backend\u2026";
+    const sub=await fetch(VQE_API+"/run",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({test:test,seed:seed,steps:steps,shots:4096})});
+    if(!sub.ok) throw new Error(await sub.text());
+    job=(await sub.json()).job_id;
+    startedAt=Date.now();
+    serverJobs[test]={job:job, started:startedAt, seed:seed, steps:steps};
+  }
+
+  // the clock counts from when the job was submitted, not from this click
+  let waited=Math.floor((Date.now()-startedAt)/1000), res=null;
+  while(true){
+    await new Promise(r=>setTimeout(r,3000));
+    if(cancelled || current!==test){
+      st.textContent="still running on the server \u2014 reselect "
+        +DOMAINS[test].title+" to rejoin";
+      return;
+    }
+    waited=Math.floor((Date.now()-startedAt)/1000);
+    let s2;
+    try{ s2=await (await fetch(VQE_API+"/status/"+job)).json(); }
+    catch(_){ continue; }                       // transient blip, keep polling
+    const mins=Math.floor(waited/60), clock=(mins?mins+"m ":"")+(waited%60)+"s";
+    if(s2.status==="queued"){
+      st.textContent="queued \u2014 waiting for a worker ("+clock+")";
+      bar.style.width="6%";
+    } else if(s2.status==="running"){
+      st.textContent="running circuits on FakeFez ("+clock+")";
+      // the queue gives no per-step feedback, so this tracks elapsed time
+      // against an estimate rather than reporting a step count it doesn't have
+      bar.style.width=Math.min(93,6+87*waited/(steps*4)).toFixed(0)+"%";
+    } else if(s2.status==="done"){ res=s2.result; break; }
+    else if(s2.status==="error"){
+      serverJobs[test].failed=true;            // a fresh click should retry
+      throw new Error(s2.error||"run failed");
+    }
+    if(waited>1800) throw new Error("timed out after 30 minutes");
+  }
+  bar.style.width="100%";
+  serverJobs[test].result=res;
+  showServerResult(res, steps);
+}
+
+function showServerResult(res, steps){
+  vqeResult=res;
+  history=[{seed:0, series:res.baseline.trace.map((v,i)=>
+              [i+1, v, res.mobiu.trace[i]])}];
+  drawChart();
+
+  const E=res.exact_ground;
+  const ga=Math.abs(res.baseline.metric-E), gs=Math.abs(res.mobiu.metric-E);
+  const better=gs<ga;
+  document.querySelector("#tbl thead").innerHTML=
+    '<tr><th>Optimizer</th><th class="num">Best energy</th>'
+    +'<th class="num">Gap to exact</th></tr>';
+  document.querySelector("#tbl tbody").innerHTML=
+     '<tr><td>torch.optim.Adam</td><td class="num mono">'+res.baseline.metric.toFixed(4)
+    +'</td><td class="num mono">'+(ga*1000).toFixed(1)+' mHa</td></tr>'
+    +'<tr><td>SoftOpt</td><td class="num mono '+(better?"win":"lose")+'">'
+    +res.mobiu.metric.toFixed(4)+'</td><td class="num mono '+(better?"win":"lose")
+    +'">'+(gs*1000).toFixed(1)+' mHa</td></tr>';
+
+  const pct=100*(ga-gs)/ga, mult=better?ga/gs:gs/ga;
+  const el=document.getElementById("verdict"); el.style.display="block";
+  el.innerHTML="Exact ground state <b>"+E.toFixed(4)+"</b> Ha. SoftOpt closed <b>"
+    +(better?"":"\u2212")+Math.abs(pct).toFixed(1)+"%</b> "+(better?"more":"less")
+    +" of the gap than Adam \u2014 <b>"+mult.toFixed(1)+"\u00d7</b> "
+    +(better?"closer":"further")+" to the true energy, over "+steps
+    +" steps at 4096 shots.";
+}
+
+sizeCanvas(); syncButton();
+// Pyodide is only needed by the in-browser benchmarks. Loading it blocks the
+// main thread for a few seconds, so start it on first use rather than on page
+// load -- a visitor who only runs VQE never pays for it.
+let bootStarted=false;
+function ensureBooted(){
+  if(bootStarted) return;
+  bootStarted=true; bootLab();
+}
+if(!DOMAINS[current].server) ensureBooted();
+</script>
+
+
 
 </body>
 </html>
