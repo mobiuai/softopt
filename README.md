@@ -59,7 +59,7 @@ is the mechanism.
 But at 10 qubits both arms covered only a few percent of the way to the ground
 state. 1.5× of very little is still very little. **If the plateau is your
 problem, this is not the fix.** The scan and its replication are in
-`benchmarks/barren_plateau/`.
+`benchmarks_barren_plateau/`.
 
 ## Installation
 
