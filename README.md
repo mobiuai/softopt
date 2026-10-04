@@ -64,7 +64,8 @@ problem, this is not the fix.** The scan and its replication are in
 ## Installation
 
 ```bash
-pip install softopt
+pip install softopt            # numpy only
+pip install "softopt[torch]"   # adds SoftOptTorch
 ```
 
 ## Quick start
@@ -94,6 +95,39 @@ Your model needs to be built from arithmetic and the elementary functions the so
 The one thing to avoid is converting a traced value back to a plain number mid-model — `float(x)`, or `np.array(params)` on the parameter list, both silently discard the derivative. `soft_compile`'s verification catches this and says so.
 
 If you'd rather write the derivative function yourself — because your model lives in a simulator SoftOpt can't trace, or because you want the speed of a hand-tuned implementation — pass any `g_delta(theta, delta)` that returns the exact directional derivative, and skip `soft_compile` entirely.
+
+## PyTorch
+
+If your known model is written in PyTorch, `SoftOptTorch` runs the same step as a `torch.optim.Optimizer`: an Adam update from the gradient, then the bounded Newton correction. The directional derivative and the curvature along the probe direction come from PyTorch's forward-mode AD (`torch.func.jvp`, nested once), which is single-axis soft-number propagation executed by PyTorch's own engine. It runs wherever your model runs: CPU, CUDA or Apple MPS.
+
+```bash
+pip install "softopt[torch]"
+```
+
+```python
+import torch
+from softopt import SoftOptTorch
+
+class HeatModel(torch.nn.Module):          # any known, differentiable model
+    def __init__(self):
+        super().__init__()
+        self.k = torch.nn.Parameter(torch.tensor([0.5]))
+        self.T0 = torch.nn.Parameter(torch.tensor([20.0]))
+    def forward(self, t):
+        return self.T0 * torch.exp(-self.k * t)
+
+def loss_fn(model, batch):                 # a fixed objective, re-evaluated exactly
+    t, measured = batch
+    return ((model(t) - measured) ** 2).mean()
+
+model = HeatModel().to("cuda")             # or "cpu" / "mps"
+opt = SoftOptTorch(model.parameters(), model, loss_fn, lr=1e-2)
+
+for step in range(num_steps):
+    loss = opt.step((t, measured))         # forward, backward, Adam, correction
+```
+
+`loss_fn(model, batch)` must be the same objective on every call, as in every domain above: a fixed dataset, a simulator, a physical model. Each parameter moves by at most `newton_bound` in the correction (default: the learning rate). BatchNorm and MaxPool layers are handled; the correction pass never updates BatchNorm running statistics.
 
 ## Validated results
 

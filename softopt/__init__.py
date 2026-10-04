@@ -18,9 +18,18 @@ from .soft_number import (
     spow, sroot, ssqrt, ssin, scos, sexp, slog,
 )
 
+
+def __getattr__(name):
+    # torch is optional: import the PyTorch optimizer only when asked for.
+    if name == "SoftOptTorch":
+        from .torch_optimizer import SoftOptTorch
+        return SoftOptTorch
+    raise AttributeError(f"module 'softopt' has no attribute {name!r}")
+
+
 __all__ = [
-    "SoftOpt", "SoftNumber", "soft_compile",
+    "SoftOpt", "SoftOptTorch", "SoftNumber", "soft_compile",
     "sadd", "sneg", "ssub", "smul", "sinv", "sdiv",
     "spow", "sroot", "ssqrt", "ssin", "scos", "sexp", "slog",
 ]
-__version__ = "0.5.9"
+__version__ = "0.6.0"

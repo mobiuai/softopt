@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "softopt"
-version = "0.5.10"
+version = "0.6.0"
 description = "A standalone optimizer for problems with a known computation graph, built on Klein–Maimon soft-number calculus"
 readme = "README.md"
 license = { text = "MIT" }
@@ -27,6 +27,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
+torch = ["torch>=2.0"]
 
 [project.urls]
 Homepage = "https://github.com/mobiuai/softopt"
