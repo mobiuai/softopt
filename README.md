@@ -96,6 +96,32 @@ The one thing to avoid is converting a traced value back to a plain number mid-m
 
 If you'd rather write the derivative function yourself — because your model lives in a simulator SoftOpt can't trace, or because you want the speed of a hand-tuned implementation — pass any `g_delta(theta, delta)` that returns the exact directional derivative, and skip `soft_compile` entirely.
 
+## Where the slope comes from: `slope="model"` or `slope="measured"`
+
+Every correction is a Newton step, `-slope / curvature`, taken along one direction. The curvature always comes from your model. The slope has two possible sources:
+
+| | `slope="model"` (default) | `slope="measured"` (new in 0.6.1) |
+|---|---|---|
+| slope from | your model's exact derivative | your readings, along the direction you probed |
+| converges to | the **model's** optimum | the **real system's** optimum |
+| choose it when | the model is accurate and the readings are very noisy | the model may be biased, and the readings are clean enough to show the slope |
+
+With `slope="model"`, a model whose optimum is in the wrong place pulls the answer to the wrong place. `slope="measured"` uses the model only for the shape of the landscape, so the readings decide where the optimum is. An SPSA probe already measures that slope, so the measured mode costs no extra readings:
+
+```python
+from softopt import SoftOpt, soft_compile, spsa_gradient
+
+opt = SoftOpt(n, soft_compile(my_model, n_params=n), lr=0.05, slope="measured")
+
+for step in range(num_steps):
+    grad, direction, slope = spsa_gradient(measure, theta, c=0.1)   # 2 readings
+    theta = opt.step(theta, grad, direction=direction, measured_slope=slope)
+```
+
+`measure(theta)` returns one reading of the real system. If you already compute your own SPSA estimate, pass its direction `d` and `(f(θ+cd) - f(θ-cd)) / 2c` as `measured_slope`.
+
+If your model is exact, you do not need either mode, or any readings: optimise the model directly.
+
 ## PyTorch
 
 If your known model is written in PyTorch, `SoftOptTorch` runs the same step as a `torch.optim.Optimizer`: an Adam update from the gradient, then the bounded Newton correction. The directional derivative and the curvature along the probe direction come from PyTorch's forward-mode AD (`torch.func.jvp`, nested once), which is single-axis soft-number propagation executed by PyTorch's own engine. It runs wherever your model runs: CPU, CUDA or Apple MPS.

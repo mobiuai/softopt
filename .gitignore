@@ -6,3 +6,5 @@ __pycache__/
 build/
 data/
 _local/
+results_*.json
+dist/

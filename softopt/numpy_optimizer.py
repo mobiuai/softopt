@@ -7,10 +7,25 @@ derivative of your true objective along delta, computed from your own
 known model (circuit, projection, physical law). `soft_compile` generates
 this for you from a model written in ordinary Python.
 
-The correction is a bounded Newton step. The first directional derivative is
-exact, propagated through your model by soft-number arithmetic. The second is
-a central finite difference OF that exact derivative -- an approximation, with
-the usual step-size trade-off, controlled by h_fd.
+The correction is a bounded Newton step, t* = -D1 / D2 along a direction delta.
+D2 (the curvature) always comes from your model: a central finite difference
+OF the exact soft-number derivative, with the usual step-size trade-off,
+controlled by h_fd. D1 (the slope) has two possible sources, set by `slope`:
+
+  slope="model"     (default) D1 is the model's exact directional derivative
+                    along a fresh random direction. Robust to very noisy
+                    readings, but the correction pulls towards the MODEL's
+                    optimum: if the model is biased, so is the answer.
+
+  slope="measured"  D1 is the slope you measured on the real system, along the
+                    direction you measured it in (an SPSA difference gives you
+                    both for free). The model only supplies the curvature, so
+                    the fixed point is where the MEASURED slope vanishes: the
+                    real system's optimum, even when the model is off. Needs
+                    readings clean enough that the measured slope is informative.
+
+`spsa_gradient` returns the gradient estimate, the direction and the measured
+slope in one call, ready for either mode.
 """
 import numpy as np
 
@@ -18,7 +33,10 @@ import numpy as np
 class SoftOpt:
     def __init__(self, n_params, g_delta, lr=0.02, betas=(0.9, 0.999), eps=1e-8,
                  newton_lo=-0.5, newton_hi=0.5, eta_fallback=0.3,
-                 h_fd=1e-4, seed=None, _test_frozen_constant=1.0):
+                 h_fd=1e-4, seed=None, slope="model", _test_frozen_constant=1.0):
+        if slope not in ("model", "measured"):
+            raise ValueError(f'slope must be "model" or "measured", got {slope!r}')
+        self.slope = slope
         self.g_delta = g_delta
         self.lr = lr
         self.b1, self.b2 = betas
@@ -34,13 +52,19 @@ class SoftOpt:
         self._ablation_rng = None
         self._test_frozen_constant = _test_frozen_constant
 
-    def step(self, theta, grad_estimate, _test_magnitude_source=None, _test_foreign_sampler=None, _test_rng=None):
+    def step(self, theta, grad_estimate, direction=None, measured_slope=None,
+             _test_magnitude_source=None, _test_foreign_sampler=None, _test_rng=None):
         """One complete optimizer step: Adam base update + Newton-style
         correction from the known model, in a single call.
         theta: current parameters (np.ndarray)
         grad_estimate: a gradient estimate of the loss w.r.t. theta (e.g.
             from SPSA or backprop) -- exactly what you'd normally hand
             to Adam.
+        direction, measured_slope: required when slope="measured", ignored
+            otherwise. The direction your readings probed and the slope you
+            measured along it at theta, e.g. for SPSA
+            (f(theta + c*d) - f(theta - c*d)) / (2c) along d.
+            spsa_gradient() returns both.
         Returns: theta for the next step.
 
         The _test_* arguments are TEST-ONLY hooks used exclusively by the
@@ -53,6 +77,13 @@ class SoftOpt:
         """
         theta = np.asarray(theta, dtype=float)
         grad_estimate = np.asarray(grad_estimate, dtype=float)
+        if self.slope == "measured":
+            if direction is None or measured_slope is None:
+                raise ValueError('slope="measured" needs direction= and measured_slope= on every '
+                                 'step (spsa_gradient() returns both)')
+            direction = np.asarray(direction, dtype=float)
+            if direction.shape != theta.shape:
+                raise ValueError(f"direction has shape {direction.shape}, theta has {theta.shape}")
 
         # --- Adam base update ---
         self.t += 1
@@ -70,8 +101,11 @@ class SoftOpt:
 
         # --- correction from the known, exact model ---
         n = theta.shape[0]
-        gen_rng = _test_rng if _test_rng is not None else self.rng
-        delta = gen_rng.choice([-1.0, 1.0], size=n)
+        if self.slope == "measured":
+            delta = direction
+        else:
+            gen_rng = _test_rng if _test_rng is not None else self.rng
+            delta = gen_rng.choice([-1.0, 1.0], size=n)
 
         # The ablation arms must not disturb the probe-direction stream, or
         # a corrupted arm would also change every direction that follows and
@@ -79,7 +113,10 @@ class SoftOpt:
         if self._ablation_rng is None:
             self._ablation_rng = np.random.default_rng(
                 self.rng.integers(0, 2**63 - 1))
-        D1 = self.g_delta(theta_after_adam, delta)
+        if self.slope == "measured":
+            D1 = float(measured_slope)       # from the real system
+        else:
+            D1 = self.g_delta(theta_after_adam, delta)
         gp = self.g_delta(theta_after_adam + self.h_fd * delta, delta)
         gm = self.g_delta(theta_after_adam - self.h_fd * delta, delta)
         D2_real = (gp - gm) / (2 * self.h_fd)
@@ -104,3 +141,18 @@ class SoftOpt:
             t_star = float(np.clip(-self.eta_fallback * D1, self.newton_lo, self.newton_hi))
 
         return theta_after_adam + t_star * delta
+
+
+def spsa_gradient(measure, theta, c=0.1, rng=None):
+    """One SPSA probe of a noisy objective.
+
+    measure: callable theta -> one (noisy) reading of the real system.
+    Returns (grad_estimate, direction, measured_slope), where measured_slope
+    is (measure(theta + c*d) - measure(theta - c*d)) / (2c) along the random
+    +-1 direction d, and grad_estimate = measured_slope * d. Costs 2 readings.
+    """
+    theta = np.asarray(theta, dtype=float)
+    rng = np.random.default_rng() if rng is None else rng
+    d = rng.choice([-1.0, 1.0], size=theta.shape)
+    slope = (measure(theta + c * d) - measure(theta - c * d)) / (2 * c)
+    return slope * d, d, float(slope)
