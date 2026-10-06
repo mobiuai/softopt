@@ -169,6 +169,15 @@ All results below use IBM's `FakeFez` noise model via Qiskit + Aer, or realistic
 | BeH₂ | 94.7% | 5/5 |
 | HeH⁺ | 90.9% | 5/5 |
 
+**Quantum chemistry on a real molecule, and against COBYLA**
+
+| Test | Baseline | Result | Win rate |
+|---|---|---|---|
+| H₄ molecule (STO-3G, 8 qubits, 185 Pauli terms), 100 steps | Adam | 67% smaller gap to the ground state (409 vs 1227 mHa) | 10/10 |
+| H₂, same budget of 180 device readings | COBYLA | 0.11 vs 5.81 mHa above the ground state; chemical accuracy in 10/10 runs vs 3/10 | 10/10 |
+
+Both run SoftOpt with its default settings on IBM's `FakeFez` noise model: `benchmarks/vqe/h4_real_molecule.py`, `benchmarks/vqe/h2_vs_cobyla.py`.
+
 **Quantum control**
 
 | Domain | Improvement | Win rate |

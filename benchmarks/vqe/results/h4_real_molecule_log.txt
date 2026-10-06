@@ -1,0 +1,20 @@
+
+h4: 8 qubits, 185 Pauli terms, EfficientSU2 reps=2 (48 params); FakeFez, 4096 shots; lr 0.02; 100 steps; 10 seeds
+  Hartree-Fock is 167.0 mHa above the ground state
+   step   10/100  adam   3052.9  softopt    992.4   mHa   (422s)
+   step   20/100  adam   2830.1  softopt    873.6   mHa   (844s)
+   step   30/100  adam   2575.4  softopt    762.2   mHa   (1267s)
+   step   40/100  adam   2335.2  softopt    673.5   mHa   (1702s)
+   step   50/100  adam   2088.0  softopt    615.9   mHa   (2116s)
+   step   60/100  adam   1819.0  softopt    537.7   mHa   (2535s)
+   step   70/100  adam   1617.3  softopt    496.7   mHa   (2956s)
+   step   80/100  adam   1468.6  softopt    458.5   mHa   (3368s)
+   step   90/100  adam   1327.8  softopt    433.0   mHa   (3797s)
+   step  100/100  adam   1227.0  softopt    409.2   mHa   (4216s)
+
+  error above the ground state (mHa), median over seeds   (4232s)
+  exact, step 60         Adam   1819.05   SoftOpt    537.67   SoftOpt better in 10/10   gap to ground closed +70%   p=0.002   chem.acc. 0 vs 0
+  exact, step 100        Adam   1227.00   SoftOpt    409.22   SoftOpt better in 10/10   gap to ground closed +67%   p=0.002   chem.acc. 0 vs 0
+  device (FakeFez), end  Adam   1222.13   SoftOpt    471.95   SoftOpt better in 10/10
+
+results written to fez_molecules_20261006_1056/h4_results.json

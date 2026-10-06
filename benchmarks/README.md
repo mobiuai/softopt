@@ -11,6 +11,11 @@ pip install -e ..    # install softopt from the repo root
 
 ## vqe/ -- quantum chemistry
 - h2.py, h4.py, c13cl2.py -- three molecules on a real EfficientSU2 ansatz
+- h4_real_molecule.py -- the H4 molecule itself (STO-3G, Jordan-Wigner, 8 qubits,
+  185 Pauli terms; hamiltonians/h4_paulis.json), SoftOpt vs Adam, 10 seeds;
+  soft_su2.py is the same Lemma 6.1 engine, vectorised for larger registers
+- h2_vs_cobyla.py -- SoftOpt vs scipy's COBYLA on H2, same budget of device readings
+- results/ -- the logs and per-seed results behind the README numbers
 - efficient_su2_exact.py / efficient_su2_lemma61.py -- the shared, verified
   engine (bit-exact vs Qiskit's own Statevector) every molecule and spin-chain
   model below uses

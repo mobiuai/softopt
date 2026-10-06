@@ -36,7 +36,7 @@ git push -u origin main
 
 **Before pushing**, update two placeholder URLs to your real username:
 - `pyproject.toml` — the three `[project.urls]` lines
-- `README.md` and `website/index.html` — the GitHub link in the footer
+- `README.md`, and `index.html` in the separate `softopt_site` folder — the GitHub link in the footer
 
 ## 2. PyPI
 
@@ -89,12 +89,12 @@ not share accounts with the real pypi.org).
 
 ## 4. The website — softopt.mobiu.ai
 
-`website/index.html` is a single, self-contained file — no build step.
+The site lives in its own folder, `softopt_site/` (not part of this package). Its `index.html` is a single, self-contained file — no build step.
 Using GitHub Pages with your custom subdomain:
 
 ```bash
 mkdir -p docs
-cp website/index.html docs/
+cp ../softopt_site/index.html docs/
 echo "softopt.mobiu.ai" > docs/CNAME
 git add docs && git commit -m "Add landing page" && git push
 ```

@@ -1,0 +1,7 @@
+
+h2: 2 qubits, 20 params; SoftOpt 60 steps x 3 readings = 180 readings; COBYLA used 173 readings; 10 seeds  (1161s)
+  error above the ground state, median over seeds (mHa)
+  [exact ] SoftOpt     0.11   COBYLA     5.81   SoftOpt better in 10/10   gap closed +98%   p=0.002   chem.acc. 10 vs 3
+  [device] SoftOpt   129.32   COBYLA   127.64   SoftOpt better in 4/10   gap closed -1%   p=0.43   chem.acc. 0 vs 0
+
+results written to vqe_cobyla_results.json
