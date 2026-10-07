@@ -1,0 +1,44 @@
+checks: soft slope 0.10411355 vs finite difference 0.10411355;  <Z0> ours 0.06460804 vs Qiskit 0.06460804
+Iris versicolor vs virginica: 60 train / 40 test; 4 qubits, 24 parameters; FakeFez, 4096 shots; 100 steps x 3 = 300 readings per method; 20 seeds
+   step 10/100  (163s)
+   step 20/100  (328s)
+   step 30/100  (491s)
+   step 40/100  (654s)
+   step 50/100  (817s)
+   step 60/100  (983s)
+   step 70/100  (1147s)
+   step 80/100  (1312s)
+   step 90/100  (1476s)
+   step 100/100  (1644s)
+   cobyla seed 1/20  (1874s)
+   cobyla seed 2/20  (2062s)
+   cobyla seed 3/20  (2286s)
+   cobyla seed 4/20  (2468s)
+   cobyla seed 5/20  (2701s)
+   cobyla seed 6/20  (2894s)
+   cobyla seed 7/20  (3069s)
+   cobyla seed 8/20  (3300s)
+   cobyla seed 9/20  (3470s)
+   cobyla seed 10/20  (3642s)
+   cobyla seed 11/20  (3804s)
+   cobyla seed 12/20  (4016s)
+   cobyla seed 13/20  (4242s)
+   cobyla seed 14/20  (4469s)
+   cobyla seed 15/20  (4687s)
+   cobyla seed 16/20  (4852s)
+   cobyla seed 17/20  (4999s)
+   cobyla seed 18/20  (5226s)
+   cobyla seed 19/20  (5437s)
+   cobyla seed 20/20  (5622s)
+
+results (5631s), median over 20 seeds
+             test accuracy (device)   test accuracy (exact)   train loss (exact)
+  adam                        66.3%                   65.0%               0.5000
+  softopt                     70.0%                   72.5%               0.3744
+  cobyla                      70.0%                   70.0%               0.3818
+  softopt vs adam   exact_train_loss : better in 20, tie 0, worse 0   p=1.9e-06
+  softopt vs adam   device_test_acc  : better in 15, tie 3, worse 2   p=0.00082
+  softopt vs cobyla exact_train_loss : better in 16, tie 0, worse 4   p=0.0027
+  softopt vs cobyla device_test_acc  : better in 10, tie 6, worse 4   p=0.26
+
+results written to vqc2_20261006_1840/iris20_results.json

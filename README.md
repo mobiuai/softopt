@@ -94,6 +94,8 @@ Your model needs to be built from arithmetic and the elementary functions the so
 
 The one thing to avoid is converting a traced value back to a plain number mid-model — `float(x)`, or `np.array(params)` on the parameter list, both silently discard the derivative. `soft_compile`'s verification catches this and says so.
 
+**Parameter scale.** SoftOpt's correction moves each parameter by at most 0.5 per step, a natural size for angles and other parameters of order 1. If your parameters live on a very different scale (pixel offsets of 0.03, prices in the thousands), rescale them to roughly ±1, or set the bound to match: `SoftOpt(n, g_delta, lr=..., newton_lo=-b, newton_hi=b)`.
+
 If you'd rather write the derivative function yourself — because your model lives in a simulator SoftOpt can't trace, or because you want the speed of a hand-tuned implementation — pass any `g_delta(theta, delta)` that returns the exact directional derivative, and skip `soft_compile` entirely.
 
 ## Where the slope comes from: `slope="model"` or `slope="measured"`
@@ -177,6 +179,16 @@ All results below use IBM's `FakeFez` noise model via Qiskit + Aer, or realistic
 | H₂, same budget of 180 device readings | COBYLA | 0.11 vs 5.81 mHa above the ground state; chemical accuracy in 10/10 runs vs 3/10 | 10/10 |
 
 Both run SoftOpt with its default settings on IBM's `FakeFez` noise model: `benchmarks/vqe/h4_real_molecule.py`, `benchmarks/vqe/h2_vs_cobyla.py`.
+
+**Quantum machine learning**
+
+| Test | Baseline | Result | Win rate |
+|---|---|---|---|
+| Variational quantum classifier (Iris, 4 qubits, 24 parameters), same budget of 300 readings, 20 seeds | Adam | 25% lower training loss; test accuracy on the device 70.0% vs 66.3% | 20/20 (loss), 15/20 + 3 ties (accuracy) |
+| Variational quantum classifier (breast cancer, 8 qubits, 48 parameters), same budget, 10 seeds | Adam | 6% lower training loss; test accuracy on the device 90.0% vs 88.3% | 10/10 (loss), 7/10 + 2 ties (accuracy) |
+| Same two classifiers | COBYLA | lower training loss (Iris 16/20, cancer 10/10); test accuracy tied | 16/20, 10/10 (loss) |
+
+`benchmarks/qml/vqc.py --dataset iris|cancer`
 
 **Quantum control**
 

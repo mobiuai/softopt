@@ -321,6 +321,21 @@
       <tr><td>HeH⁺</td><td class="num mono">90.9%</td><td class="num win">5/5</td></tr>
     </table>
 
+    <h3 style="font-size:1.05rem; margin:26px 0 6px; color:var(--ink);">A real molecule, and against COBYLA</h3>
+    <table class="results">
+      <tr><th>Test</th><th>Baseline</th><th class="num">Result</th><th class="num">Win rate</th></tr>
+      <tr><td>H₄ molecule (8 qubits, 185-term Hamiltonian)</td><td>Adam</td><td class="num mono">67% smaller gap to the ground state</td><td class="num win">10/10</td></tr>
+      <tr><td>H₂, same budget of 180 readings</td><td>COBYLA</td><td class="num mono">0.11 vs 5.81 mHa; chemical accuracy 10/10 vs 3/10</td><td class="num win">10/10</td></tr>
+    </table>
+
+    <h3 style="font-size:1.05rem; margin:26px 0 6px; color:var(--ink);">Quantum machine learning</h3>
+    <table class="results">
+      <tr><th>Test</th><th>Baseline</th><th class="num">Result</th><th class="num">Win rate</th></tr>
+      <tr><td>Quantum classifier (Iris, 4 qubits), same budget of 300 readings, 20 seeds</td><td>Adam</td><td class="num mono">25% lower training loss; device accuracy 70.0% vs 66.3%</td><td class="num win">20/20</td></tr>
+      <tr><td>Quantum classifier (breast cancer, 8 qubits), same budget, 10 seeds</td><td>Adam</td><td class="num mono">6% lower training loss; device accuracy 90.0% vs 88.3%</td><td class="num win">10/10</td></tr>
+      <tr><td>Same two classifiers</td><td>COBYLA</td><td class="num mono">lower training loss; test accuracy tied</td><td class="num win">16/20, 10/10</td></tr>
+    </table>
+
     <h3 style="font-size:1.05rem; margin:26px 0 6px; color:var(--ink);">Quantum control</h3>
     <table class="results">
       <tr><th>Domain</th><th class="num">Improvement</th><th class="num">Win rate</th></tr>

@@ -20,6 +20,13 @@ pip install -e ..    # install softopt from the repo root
   engine (bit-exact vs Qiskit's own Statevector) every molecule and spin-chain
   model below uses
 
+## qml/ -- quantum machine learning
+- vqc.py -- a variational quantum classifier trained on FakeFez: SoftOpt vs Adam vs
+  COBYLA, same budget of device readings. --dataset iris (versicolor vs virginica,
+  4 qubits, 24 parameters; run with --seeds 20) or --dataset cancer (breast cancer,
+  8 PCA features, 8 qubits, 48 parameters). results/ holds the runs behind the README
+  numbers (vqc_iris20_*, vqc_cancer_*)
+
 ## all_efficientsu2_models.py -- BeH2, HeH+, and six spin-chain models
 Same verified engine as vqe/, different Hamiltonians:
 ```bash
