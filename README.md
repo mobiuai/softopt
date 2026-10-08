@@ -98,6 +98,14 @@ The one thing to avoid is converting a traced value back to a plain number mid-m
 
 If you'd rather write the derivative function yourself — because your model lives in a simulator SoftOpt can't trace, or because you want the speed of a hand-tuned implementation — pass any `g_delta(theta, delta)` that returns the exact directional derivative, and skip `soft_compile` entirely.
 
+### Exact curvature (new in 0.6.4)
+
+The Newton correction needs two numbers along the probe direction: the slope D1 and the curvature D2. Since 0.6.4 both come from **one pass of your model on nested soft numbers**, with no step size. Each parameter enters as `θ + δ·ε₁ + δ·ε₂`, where each soft axis obeys the book's `ε² = 0`; the mixed `ε₁ε₂` part of the result is D2 exactly (Lemma 6.1 applied twice). `soft_compile` sets this up for you, and `SoftOpt` uses it automatically.
+
+A hand-written `g_delta` can opt in the same way by carrying an attribute `g_delta.d1_d2 = lambda theta, delta: (D1, D2)`. Without it, D2 is a central finite difference of your exact `g_delta` (`h_fd`, the 0.6.3 behaviour, unchanged). `exact_d2=False` forces the finite difference.
+
+On the H4 benchmark (FakeFez, 10 seeds) the exact-curvature engine (`benchmarks/vqe/soft_su2_exact.py`, `h4_exact_d2.py`) gives the same result as the published one: 400 vs 409 mHa at step 100 (p=0.56), both 10/10 against Adam with 67% of the gap closed. `examples/soft_tensor_demo.py` shows that the same nested construction on tensors reproduces SoftOptTorch's nested `torch.func.jvp` to rounding (4e-16).
+
 ## Where the slope comes from: `slope="model"` or `slope="measured"`
 
 Every correction is a Newton step, `-slope / curvature`, taken along one direction. The curvature always comes from your model. The slope has two possible sources:

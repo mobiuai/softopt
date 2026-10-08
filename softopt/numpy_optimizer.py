@@ -8,9 +8,14 @@ known model (circuit, projection, physical law). `soft_compile` generates
 this for you from a model written in ordinary Python.
 
 The correction is a bounded Newton step, t* = -D1 / D2 along a direction delta.
-D2 (the curvature) always comes from your model: a central finite difference
-OF the exact soft-number derivative, with the usual step-size trade-off,
-controlled by h_fd. D1 (the slope) has two possible sources, set by `slope`:
+D2 (the curvature) always comes from your model. When g_delta comes from
+`soft_compile` (or carries a `d1_d2(theta, delta) -> (D1, D2)` attribute), D2 is
+EXACT: one pass of the model on nested soft numbers (two soft axes, each with
+eps^2 = 0; the mixed term is D2) -- no step size. For a hand-written g_delta
+without that attribute, D2 is a central finite difference OF the exact
+soft-number derivative, controlled by h_fd (the 0.6.3 behaviour).
+
+D1 (the slope) has two possible sources, set by `slope`:
 
   slope="model"     (default) D1 is the model's exact directional derivative
                     along a fresh random direction. Robust to very noisy
@@ -33,7 +38,7 @@ import numpy as np
 class SoftOpt:
     def __init__(self, n_params, g_delta, lr=0.02, betas=(0.9, 0.999), eps=1e-8,
                  newton_lo=-0.5, newton_hi=0.5, eta_fallback=0.3,
-                 h_fd=1e-4, seed=None, slope="model", _test_frozen_constant=1.0):
+                 h_fd=1e-4, seed=None, slope="model", exact_d2="auto", _test_frozen_constant=1.0):
         if slope not in ("model", "measured"):
             raise ValueError(f'slope must be "model" or "measured", got {slope!r}')
         self.slope = slope
@@ -45,6 +50,11 @@ class SoftOpt:
         self.newton_hi = newton_hi
         self.eta_fallback = eta_fallback
         self.h_fd = h_fd
+        if exact_d2 not in ("auto", True, False):
+            raise ValueError('exact_d2 must be "auto", True or False')
+        self._d1_d2 = getattr(g_delta, "d1_d2", None) if exact_d2 else None
+        if exact_d2 is True and self._d1_d2 is None:
+            raise ValueError("exact_d2=True needs a g_delta with a d1_d2 attribute (e.g. from soft_compile)")
         self.m = None
         self.v = None
         self.t = 0
@@ -113,13 +123,17 @@ class SoftOpt:
         if self._ablation_rng is None:
             self._ablation_rng = np.random.default_rng(
                 self.rng.integers(0, 2**63 - 1))
+        if self._d1_d2 is not None:          # exact: nested soft numbers, one pass
+            D1_model, D2_real = self._d1_d2(theta_after_adam, delta)
+        else:                                # finite difference of the exact g_delta
+            D1_model = None
+            gp = self.g_delta(theta_after_adam + self.h_fd * delta, delta)
+            gm = self.g_delta(theta_after_adam - self.h_fd * delta, delta)
+            D2_real = (gp - gm) / (2 * self.h_fd)
         if self.slope == "measured":
             D1 = float(measured_slope)       # from the real system
         else:
-            D1 = self.g_delta(theta_after_adam, delta)
-        gp = self.g_delta(theta_after_adam + self.h_fd * delta, delta)
-        gm = self.g_delta(theta_after_adam - self.h_fd * delta, delta)
-        D2_real = (gp - gm) / (2 * self.h_fd)
+            D1 = D1_model if D1_model is not None else self.g_delta(theta_after_adam, delta)
 
         if _test_magnitude_source in (None, 'real'):
             D2_used = D2_real
@@ -129,9 +143,12 @@ class SoftOpt:
             theta_f = _test_foreign_sampler(self._ablation_rng)
             delta_f = (self._ablation_rng.choice([-1.0, 1.0], size=n)
                        if _test_magnitude_source == 'foreign_point_and_dir' else delta)
-            gp_f = self.g_delta(theta_f + self.h_fd * delta_f, delta_f)
-            gm_f = self.g_delta(theta_f - self.h_fd * delta_f, delta_f)
-            D2_used = abs((gp_f - gm_f) / (2 * self.h_fd))
+            if self._d1_d2 is not None:
+                D2_used = abs(self._d1_d2(theta_f, delta_f)[1])
+            else:
+                gp_f = self.g_delta(theta_f + self.h_fd * delta_f, delta_f)
+                gm_f = self.g_delta(theta_f - self.h_fd * delta_f, delta_f)
+                D2_used = abs((gp_f - gm_f) / (2 * self.h_fd))
         else:
             raise ValueError(_test_magnitude_source)
 

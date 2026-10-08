@@ -61,6 +61,33 @@ def soft_compile(model_fn, n_params=None, verify=True, verify_tol=1e-5):
             )
         return result.a
 
+    def d1_d2(theta, delta):
+        """Exact D1 = f'(theta).delta and D2 = delta^T f''(theta) delta from ONE pass of the model
+        on nested soft numbers: each parameter is t + eps2*d + eps1*d, built as
+        SoftNumber(SoftNumber(0, d), SoftNumber(d, t)). Each axis obeys the book's eps^2 = 0; the
+        mixed eps1*eps2 component of the result is D2 (Lemma 6.1 applied twice). No step size."""
+        soft = [SoftNumber(SoftNumber(0.0, float(d)), SoftNumber(float(d), float(t)))
+                for t, d in zip(theta, delta)]
+        r = model_fn(soft)
+        if not (isinstance(r, SoftNumber) and isinstance(r.a, SoftNumber)):
+            raise TypeError("the model did not propagate nested soft numbers")
+        D1, D2 = float(r.a.b), float(r.a.a)
+        if not (np.isfinite(D1) and np.isfinite(D2)):
+            raise FloatingPointError(f"non-finite slope/curvature ({D1}, {D2}) at this point")
+        return D1, D2
+
+    # Attach the exact second-order path; SoftOpt uses it automatically when present.
+    # If the model cannot carry nested soft numbers, fall back silently to the first-order g_delta.
+    try:
+        _t = np.random.default_rng(1).normal(0.0, 0.5, n_params) if n_params else None
+        if _t is not None:
+            d1, _ = d1_d2(_t, np.ones(n_params))
+            if abs(d1 - g_delta(_t, np.ones(n_params))) > 1e-9 * max(1.0, abs(d1)):
+                raise ValueError
+        g_delta.d1_d2 = d1_d2
+    except Exception:
+        pass
+
     if verify:
         if n_params is None:
             raise ValueError("pass n_params to verify the compiled model, "
