@@ -9,6 +9,16 @@ and compare against genuine torch.optim.Adam.
 pip install -e ..    # install softopt from the repo root
 ```
 
+## softbench/ -- one small problem per domain (calibrate=True, new in 0.7.0)
+- softbench.py -- eleven domains (quantum chemistry, beam steering, robot arm, batch reactor, drug dosing,
+  portfolio, building thermal control, battery charging, epidemic control, classifier under data shift,
+  exact-model control), one protocol: a model with uncertain parameters, a real system that also carries an
+  unmodelled effect, noisy measurements, 200 measurements, 10 seeds. Arms: Adam (best of five lrs), SPSA, COBYLA,
+  SoftOpt default / measured / calibrate=True with and without bias parameters.
+  `python3 softbench.py --problem pk` (or `--list`); `--bias_mult 3` reruns calibrate=True with a prior 3x too wide
+- sb_savings.py -- measurements needed to reach Adam's 200-measurement quality (run after softbench.py)
+- results/ -- the logs and per-seed results behind the README tables
+
 ## vqe/ -- quantum chemistry
 - h2.py, h4.py, c13cl2.py -- three molecules on a real EfficientSU2 ansatz
 - h4_real_molecule.py -- the H4 molecule itself (STO-3G, Jordan-Wigner, 8 qubits,

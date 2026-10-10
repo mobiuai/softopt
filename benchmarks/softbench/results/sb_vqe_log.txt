@@ -1,0 +1,16 @@
+[vqe] start gap median 1.754; Adam lr medians 0.01: 0.258, 0.03: 0.00514, 0.1: 0.00101, 0.3: 0.0416, 1.0: 0.647 -> 0.1  (3s)
+  spsa              median gap 0.00394  (3s)
+  cobyla            median gap 0.0117  (4s)
+  softopt           median gap 0.00397  (4s)
+  softopt_measured  median gap 0.00333  (5s)
+  cal_free          median gap 0.000606  (9s)
+  cal_beta          median gap 0.000104  (21s)
+
+=== SoftBench vqe: fraction of the start gap remaining (lower is better), 10 seeds; best baseline = adam
+  adam               0.001009   0.01613   
+  spsa               0.003942   0.06301   better than adam 4/10  p=0.32
+  cobyla              0.01166   0.04229   better than adam 1/10  p=0.014
+  softopt            0.003972   0.03941   better than adam 2/10  p=0.037
+  softopt_measured   0.003334   0.01113   better than adam 2/10  p=0.13
+  cal_free           0.000606  0.004562   better than adam 6/10  p=0.56
+  cal_beta          0.0001041 0.0006852   better than adam 9/10  p=0.0039

@@ -1,0 +1,16 @@
+[exact] start gap median 3.236; Adam lr medians 0.01: 0.156, 0.03: 0.00432, 0.1: 0.00257, 0.3: 0.119, 1.0: 0.17 -> 0.1  (0s)
+  spsa              median gap 0.026  (1s)
+  cobyla            median gap 0.00478  (1s)
+  softopt           median gap 8.52e-05  (1s)
+  softopt_measured  median gap 0.000648  (1s)
+  cal_free          median gap 0.000163  (3s)
+  cal_beta          median gap 0.000163  (5s)
+
+=== SoftBench exact: fraction of the start gap remaining (lower is better), 10 seeds; best baseline = adam
+  adam               0.002567  0.008277   
+  spsa                0.02603    0.1366   better than adam 3/10  p=0.037
+  cobyla             0.004781  0.009722   better than adam 3/10  p=0.23
+  softopt           8.521e-05 0.0004087   better than adam 9/10  p=0.0039
+  softopt_measured  0.0006482  0.002486   better than adam 8/10  p=0.0098
+  cal_free          0.0001633 0.0002276   better than adam 10/10  p=0.002
+  cal_beta          0.0001634 0.0002265   better than adam 10/10  p=0.002

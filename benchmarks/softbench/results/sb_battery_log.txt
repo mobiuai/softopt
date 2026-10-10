@@ -1,0 +1,16 @@
+[battery] start gap median 0.06322; Adam lr medians 0.01: 0.0601, 0.03: 0.0318, 0.1: 0.123, 0.3: 0.395, 1.0: 1.93 -> 0.03  (3s)
+  spsa              median gap 0.101  (3s)
+  cobyla            median gap 0.166  (4s)
+  softopt           median gap 1.38  (5s)
+  softopt_measured  median gap 0.624  (7s)
+  cal_free          median gap 0.435  (17s)
+  cal_beta          median gap 0.0228  (36s)
+
+=== SoftBench battery: fraction of the start gap remaining (lower is better), 10 seeds; best baseline = adam
+  adam                0.03178    0.1174   
+  spsa                 0.1007    0.5301   better than adam 1/10  p=0.0039
+  cobyla               0.1659    0.7882   better than adam 3/10  p=0.037
+  softopt               1.383     1.739   better than adam 0/10  p=0.002
+  softopt_measured     0.6243     2.386   better than adam 0/10  p=0.002
+  cal_free             0.4355     2.242   better than adam 2/10  p=0.02
+  cal_beta             0.0228   0.06234   better than adam 7/10  p=0.037

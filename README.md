@@ -1,65 +1,125 @@
 # SoftOpt
 
-**A standalone optimizer that excels against leading market optimizers like Adam, in problems with a known, differentiable computation graph.**
+**An optimization layer that closes the gap between your model and the real system.**
 
-Each step is an update followed by an exact Newton correction computed from your own model, through Klein–Maimon soft-number calculus (*Foundations of Soft Logic*, Klein & Maimon, Springer 2024). Free, open source, and runs locally.
+You have a model of your system — a simulator, a circuit, a physical law, a pharmacokinetic model — and you
+measure the real thing, where every measurement costs time or money. SoftOpt sits on top of Adam and, on every
+step, takes an exact Newton correction from your model through Klein–Maimon soft-number calculus (*Foundations
+of Soft Logic*, Klein & Maimon, Springer 2024). With `calibrate=True` the same measurements also correct the
+model's uncertain parameters while the optimization runs, so the correction keeps pointing at the real system's
+optimum instead of the model's.
 
-## Is SoftOpt the right tool for your problem?
+**When your model is exact** — a quantum circuit, a known physical law — SoftOpt gets closer to the true optimum
+than Adam and COBYLA. On H₂ on IBM's FakeFez noise model it reaches chemical accuracy in 10 of 10 runs against
+COBYLA's 3 of 10 (0.11 vs 5.81 mHa, same 180 readings); on the H₄ molecule (8 qubits, 185 Pauli terms) its gap to
+the ground state is 67% smaller than Adam's, 10/10; in two-qubit quantum control, 84% smaller, 20/20.
 
-One question decides it, and you can answer it without running anything.
+**When your model is approximately right** — the usual case on real systems — `calibrate=True` closes the gap.
+Across eleven domains — quantum chemistry, beam steering, robotics, chemical engineering, drug dosing, finance,
+building control, batteries, epidemiology, machine learning and an exact-model control — SoftOpt with
+`calibrate=True` reaches the quality Adam reaches after 200 measurements with **2.65× fewer measurements**
+(median; 1.35× to 5.4× by domain).
 
-**Can you get a residual vector?** That is: can you compute
-`model(theta) - data` and get back an *array*, rather than a single number?
+Free, open source, and runs locally.
 
-- **Yes** → use `scipy.optimize.least_squares`. It builds the full Jacobian and
-  exploits the least-squares structure, and it will beat SoftOpt on both
-  accuracy and speed. This holds regardless of how large or how noisy the
-  problem is. We measured it: on solar-cell parameter extraction, `least_squares`
-  reached 7.9 mA against SoftOpt's 37.3 mA, and did it 21x faster.
+## When to use it
 
-- **No** → SoftOpt is built for this case. Each evaluation returns **one number,
-  and it is noisy**: a quantum measurement, a laser-tracker sweep, a backtest, a
-  simulator that returns a score. There is no residual vector for
-  `least_squares` to work with, and finite-difference methods like L-BFGS-B end
-  up differentiating the noise rather than the model.
+**You have a model of your system and you measure the real one?** Use `calibrate=True` and name the model
+parameters you are not sure of, with a generous estimate of how far off they may be.
 
-SoftOpt's advantage comes from taking the derivative **from your model** instead
-of from your measurements. That only matters when the measurements are the noisy
-part. Every validated domain below is of the second kind; that is not a
-convenience of selection, it is where the mechanism applies.
+```python
+from softopt import SoftOpt, soft_compile, spsa_gradient
 
-## Where it helps
+def model(theta, beta):            # your simulator; beta = offsets of its uncertain parameters (0 = nominal)
+    ...
 
-If your problem has a **known computation graph** — a quantum circuit, a physical simulator, a projection or measurement model, anything you can write down exactly, even if the *measurements* of it are noisy — SoftOpt computes an exact directional derivative of that model on every step, plus the curvature along the same direction, and uses them to correct the optimizer's trajectory. Validated, with real hardware-noise-model data, across:
+g = soft_compile(model, n_params=n, n_bias=k)
+opt = SoftOpt(n, g, lr=0.05, calibrate=True, bias_scale=0.2)   # bias_scale: expected size of beta (generous)
 
-- **Quantum chemistry (VQE)** — H₂, H₄, BeH₂, HeH⁺, and larger multireference molecules
-- **Quantum control (GRAPE)** — the single cleanest result across every domain tested
-- **Computer vision** — multi-camera bundle adjustment / camera calibration
-- **Finance** — portfolio optimization (Markowitz mean-variance)
-- **Condensed-matter physics** — quasicrystal and spin-chain models (Ising, XY, Heisenberg, SSH, Kitaev)
-- Pharmacokinetics, logistic regression, and more
+for step in range(num_steps):
+    grad, direction, slope = spsa_gradient(measure, theta, c=0.1)       # 2 measurements of the real system
+    theta = opt.step(theta, grad, direction=direction, measured_slope=slope)
 
-## Where it does *not* help
+opt.calibration     # the current estimates: beta, contrast, and the discrepancy the model cannot explain
+```
 
-Full reinforcement learning (or anything else with a continuously **moving target** — a policy, an adversary, a non-stationary distribution) is outside SoftOpt's validated scope. The mechanism needs a *fixed* objective to compute a meaningful correction against; a moving target breaks that assumption. Use plain Adam/SGD there.
+Everything else stays as it was: the same Adam update, the same measurements, no extra readings. When unsure of
+`bias_scale`, err on the wide side.
 
-**Barren plateaus.** In a deep hardware-efficient circuit at random
-initialisation, the gradient decays exponentially in the qubit count and the
-shot-noise measurement of it is larger than the thing it measures. An exact
-derivative still helps there — it comes from the circuit, so it stays exact
-however flat the landscape gets — but it does not remove the barrier.
+| your situation | the tool |
+|---|---|
+| a model with uncertain parameters + measurements of the real system | **SoftOpt, `calibrate=True`** |
+| an exact model + noisy measurements | SoftOpt, default settings |
+| you can compute a residual vector `model(theta) - data` | `scipy.optimize.least_squares` |
+| only a learned black-box surrogate (a neural network) + an expensive oracle | Bayesian optimization |
 
-We measured this at 4–10 qubits on a transverse-field Ising chain: SoftOpt
-covers **1.4–1.6× as much of the distance to the ground state** as Adam, and
-that ratio held across three seed streams, five shot budgets (512 to 65536),
-five SPSA probe sizes and three different Hamiltonians — 316 wins in 320 runs
-across 16 conditions. The advantage *grows* as the measurement degrades, which
-is the mechanism.
+## What `calibrate=True` does (new in 0.7.0)
 
-But at 10 qubits both arms covered only a few percent of the way to the ground
-state. 1.5× of very little is still very little. **If the plateau is your
-problem, this is not the fix.** The scan and its replication are in
-`benchmarks_barren_plateau/`.
+The model is evaluated on nested soft numbers: one soft axis along the probe direction, the other along each
+uncertain parameter. The mixed part of the result is the exact sensitivity of the model's predicted slope to
+that parameter, and every measured slope updates the parameters through it (a Kalman filter). Whatever the
+parameters cannot explain is carried as an explicit discrepancy term on the soft axis. Each correction is
+SoftOpt's bounded Newton step on the calibrated model, sized by how certain the calibrated prediction is, and the
+calibrated model is evaluated at the target before the step is taken.
+
+`calibrate=True` also works on a plain `model(theta)` with no bias parameters; naming the uncertain parameters is
+what makes it reliable across domains.
+
+## Results across domains
+
+One small problem per domain, one protocol for all: the model is the domain's standard simulator with its
+uncertain parameters offset at random, the real system also carries an effect the model does not have
+(except in the exact-model control),
+measurements are noisy, 200 measurements, 10 seeds, the same start, Adam at its best of five learning rates and
+SoftOpt at Adam's. `benchmarks/softbench/`.
+
+**Measurements needed to reach the quality Adam reaches with 200**
+
+| domain | SoftOpt `calibrate=True` | runs that got there |
+|---|---|---|
+| Quantum chemistry (H₂) | **5.4× fewer** | 10/10 |
+| Epidemic control (vaccination) | **4.3× fewer** | 10/10 |
+| Drug dosing (pharmacokinetics) | **3.3× fewer** | 10/10 |
+| Portfolio optimization | **3.0× fewer** | 10/10 |
+| Exact-model control | **3.0× fewer** | 10/10 |
+| RF beam steering (phased array) | **2.7× fewer** | 9/10 |
+| Batch chemical reactor | **2.2× fewer** | 10/10 |
+| Robot arm controller tuning | **1.9× fewer** | 8/10 |
+| Classifier under data shift | **1.9× fewer** | 8/10 |
+| Building thermal control | **1.8× fewer** | 6/10 |
+| Battery fast charging | **1.35× fewer** | 7/10 |
+
+**Remaining gap to the true optimum after 200 measurements** (fraction of the starting gap; median)
+
+| domain | Adam | COBYLA | SoftOpt default | **SoftOpt `calibrate=True`** |
+|---|---|---|---|---|
+| Quantum chemistry (H₂) | 0.0010 | 0.012 | 0.0040 | **0.0001** |
+| RF beam steering | 0.0043 | 0.053 | 0.079 | **0.0026** |
+| Robot arm tuning | 0.0125 | 0.026 | 0.024 | **0.0027** |
+| Batch reactor | 0.0065 | 0.14 | 0.029 | **0.0023** |
+| Drug dosing | 0.0198 | 0.056 | 0.067 | **0.0016** |
+| Portfolio | 0.052 | 0.10 | 0.68 | **0.030** |
+| Battery charging | 0.032 | 0.17 | 1.38 | **0.023** |
+| Building thermal control | 0.0089 | 0.069 | 0.046 | 0.0148 |
+| Epidemic control | 0.0081 | 0.024 | ~0 | 0.0035 |
+| Classifier under data shift | 0.22 | 0.49 | 0.105 | 0.23 |
+| Exact-model control | 0.0026 | 0.0048 | 0.00009 | 0.00016 |
+
+**Quantum chemistry with gate errors, on IBM's FakeFez noise model**
+
+H₂ on a device whose gates carry coherent errors (over-rotations, phase offsets, residual coupling), so the
+ideal circuit no longer points at the right parameters. 180 device readings, 20 new seeds:
+
+| | energy above the ground state (mHa, median) |
+|---|---|
+| Adam | 4.7 |
+| COBYLA | 2.6 |
+| SoftOpt, default | 13.0 |
+| **SoftOpt, `calibrate=True`** | **0.42** (better than Adam 20/20, than COBYLA 16/20) |
+
+With gate errors twice as large: 0.48 mHa, against Adam 4.8 and COBYLA 2.1. On a two-qubit gate calibration
+task (18 angles, FakeFez, hidden coherent errors) the calibrated layer reaches 1.4e-4 infidelity against
+Adam's 3.7e-4 (18/20), and in sensorless adaptive optics 0.0023 against 0.0041 (17/20).
 
 ## Installation
 
@@ -272,10 +332,14 @@ The full soft-number algebra is available from the package (`from softopt import
 
 `SoftNumber` wraps these with operator syntax (`x + y`, `x * y`, `x ** 3`, `x.sqrt()`) and is verified, axiom by axiom, against the book's own proofs that bridge numbers form an abelian group under addition and a ring under both operations (`tests/test_soft_number.py`).
 
-## What SoftOpt is *not*
+## Choosing between the modes
 
-- Not a claim to beat specialized full-Jacobian second-order solvers (Levenberg–Marquardt, L-BFGS) where those are already practical — SoftOpt's validated niche is genuine improvement over first-order optimizers (Adam, SGD) already in use, particularly where switching to a full second-order method isn't practical (embedded in a larger pipeline, high dimensionality, or measurement noise).
-- Not a general-purpose black-box optimizer — it requires a known computation graph, as described above.
+- `calibrate=True` — your model has parameters you are not sure of. The recommended starting point whenever you
+  measure a real system.
+- default (`slope="model"`) — your model is exact; the measurements are only noisy.
+- `slope="measured"` — the model is approximate and you do not want to name its uncertain parameters.
+
+`calibrate=True` is available in `SoftOpt` (numpy). `SoftOptTorch` runs the default correction.
 
 ## License
 

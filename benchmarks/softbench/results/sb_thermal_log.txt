@@ -1,0 +1,16 @@
+[thermal] start gap median 0.3253; Adam lr medians 0.01: 0.496, 0.03: 0.158, 0.1: 0.031, 0.3: 0.00887, 1.0: 0.0746 -> 0.3  (2s)
+  spsa              median gap 0.232  (2s)
+  cobyla            median gap 0.0687  (2s)
+  softopt           median gap 0.0459  (4s)
+  softopt_measured  median gap 0.00991  (6s)
+  cal_free          median gap 0.0187  (16s)
+  cal_beta          median gap 0.0148  (39s)
+
+=== SoftBench thermal: fraction of the start gap remaining (lower is better), 10 seeds; best baseline = adam
+  adam               0.008865   0.06068   
+  spsa                 0.2319    0.3668   better than adam 0/10  p=0.002
+  cobyla              0.06871   0.09827   better than adam 0/10  p=0.002
+  softopt             0.04587    0.2444   better than adam 3/10  p=0.027
+  softopt_measured   0.009908    0.1012   better than adam 6/10  p=0.77
+  cal_free            0.01875   0.06914   better than adam 3/10  p=0.16
+  cal_beta            0.01484    0.0692   better than adam 4/10  p=0.28

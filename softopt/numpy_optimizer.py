@@ -38,7 +38,8 @@ import numpy as np
 class SoftOpt:
     def __init__(self, n_params, g_delta, lr=0.02, betas=(0.9, 0.999), eps=1e-8,
                  newton_lo=-0.5, newton_hi=0.5, eta_fallback=0.3,
-                 h_fd=1e-4, seed=None, slope="model", exact_d2="auto", _test_frozen_constant=1.0):
+                 h_fd=1e-4, seed=None, slope="model", exact_d2="auto", calibrate=False, bias_scale=None,
+                 _test_frozen_constant=1.0):
         if slope not in ("model", "measured"):
             raise ValueError(f'slope must be "model" or "measured", got {slope!r}')
         self.slope = slope
@@ -59,6 +60,14 @@ class SoftOpt:
         self.v = None
         self.t = 0
         self.rng = np.random.default_rng(seed)
+        self.calibrator = None
+        if calibrate:
+            model = getattr(g_delta, "calibration", None)
+            if model is None:
+                raise ValueError("calibrate=True needs a g_delta from soft_compile (it carries the model the "
+                                 "calibration evaluates on nested soft numbers)")
+            from .calibrate import Calibrator
+            self.calibrator = Calibrator(n_params, model, bias_scale)
         self._ablation_rng = None
         self._test_frozen_constant = _test_frozen_constant
 
@@ -87,6 +96,8 @@ class SoftOpt:
         """
         theta = np.asarray(theta, dtype=float)
         grad_estimate = np.asarray(grad_estimate, dtype=float)
+        if self.calibrator is not None:
+            return self._calibrated_step(theta, grad_estimate, direction, measured_slope)
         if self.slope == "measured":
             if direction is None or measured_slope is None:
                 raise ValueError('slope="measured" needs direction= and measured_slope= on every '
@@ -158,6 +169,34 @@ class SoftOpt:
             t_star = float(np.clip(-self.eta_fallback * D1, self.newton_lo, self.newton_hi))
 
         return theta_after_adam + t_star * delta
+
+
+    def _calibrated_step(self, theta, grad_estimate, direction, measured_slope):
+        """calibrate=True: the measured pair also calibrates the model (softopt.calibrate); the Adam update is
+        unchanged; the correction is the bounded Newton step of the CALIBRATED model."""
+        if direction is None or measured_slope is None:
+            raise ValueError("calibrate=True needs direction= and measured_slope= on every step "
+                             "(spsa_gradient() returns both)")
+        direction = np.asarray(direction, dtype=float)
+        self.calibrator.update(theta, direction, float(measured_slope))
+        self.t += 1
+        if self.m is None:
+            self.m = np.zeros_like(theta)
+            self.v = np.zeros_like(theta)
+        self.m = self.b1 * self.m + (1 - self.b1) * grad_estimate
+        self.v = self.b2 * self.v + (1 - self.b2) * grad_estimate ** 2
+        mh = self.m / (1 - self.b1 ** self.t)
+        vh = self.v / (1 - self.b2 ** self.t)
+        x = theta - self.lr * mh / (np.sqrt(vh) + self.eps)
+        e = self.rng.choice([-1.0, 1.0], size=theta.shape[0])
+        step = self.calibrator.correction(x, e, self.newton_lo, self.newton_hi, self.eta_fallback)
+        return x + step * e
+
+    @property
+    def calibration(self):
+        """calibrate=True: current estimates -- beta (bias parameters), kappa (contrast), the discrepancy
+        gradient, and which of the two discrepancy filters is in use."""
+        return None if self.calibrator is None else self.calibrator.state
 
 
 def spsa_gradient(measure, theta, c=0.1, rng=None):

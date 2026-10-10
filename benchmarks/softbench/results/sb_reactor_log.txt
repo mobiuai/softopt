@@ -1,0 +1,16 @@
+[reactor] start gap median 0.1049; Adam lr medians 0.01: 0.0888, 0.03: 0.00649, 0.1: 0.00723, 0.3: 0.0437, 1.0: 0.699 -> 0.03  (4s)
+  spsa              median gap 0.0575  (4s)
+  cobyla            median gap 0.138  (4s)
+  softopt           median gap 0.0291  (6s)
+  softopt_measured  median gap 0.0164  (9s)
+  cal_free          median gap 0.0028  (24s)
+  cal_beta          median gap 0.00235  (54s)
+
+=== SoftBench reactor: fraction of the start gap remaining (lower is better), 10 seeds; best baseline = adam
+  adam               0.006486   0.06845   
+  spsa                0.05748    0.1655   better than adam 0/10  p=0.002
+  cobyla               0.1379    0.3272   better than adam 0/10  p=0.002
+  softopt             0.02911    0.1054   better than adam 0/10  p=0.002
+  softopt_measured    0.01637    0.4787   better than adam 2/10  p=0.11
+  cal_free           0.002804   0.07621   better than adam 8/10  p=0.32
+  cal_beta           0.002347   0.02839   better than adam 10/10  p=0.002

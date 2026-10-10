@@ -1,0 +1,16 @@
+[epidemic] start gap median 0.2321; Adam lr medians 0.01: 0.537, 0.03: 0.186, 0.1: 0.0283, 0.3: 0.00809, 1.0: 0.0794 -> 0.3  (1s)
+  spsa              median gap 0.227  (2s)
+  cobyla            median gap 0.0242  (2s)
+  softopt           median gap -7.82e-07  (6s)
+  softopt_measured  median gap 0.0119  (9s)
+  cal_free          median gap 0.00398  (29s)
+  cal_beta          median gap 0.00349  (56s)
+
+=== SoftBench epidemic: fraction of the start gap remaining (lower is better), 10 seeds; best baseline = adam
+  adam               0.008088   0.01567   
+  spsa                 0.2273     0.306   better than adam 0/10  p=0.002
+  cobyla              0.02424   0.05373   better than adam 1/10  p=0.0039
+  softopt          -7.824e-07  0.005277   better than adam 9/10  p=0.0039
+  softopt_measured    0.01188    0.3258   better than adam 2/10  p=0.064
+  cal_free           0.003978  0.009693   better than adam 8/10  p=0.049
+  cal_beta           0.003486  0.009784   better than adam 9/10  p=0.027

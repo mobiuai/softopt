@@ -27,13 +27,22 @@ import numpy as np
 from .soft_number import SoftNumber
 
 
-def soft_compile(model_fn, n_params=None, verify=True, verify_tol=1e-5):
+def soft_compile(model_fn, n_params=None, verify=True, verify_tol=1e-5, n_bias=0):
     """model_fn: takes a sequence of scalars, returns a scalar.
+    n_bias: for calibrate=True with bias parameters -- model_fn(theta, beta) then takes a second sequence of
+        n_bias uncertain model parameters (offsets from nominal, 0 = nominal); SoftOpt itself sees the nominal
+        model model_fn(theta, [0]*n_bias). See softopt.calibrate.
     n_params: needed only for verification.
     verify: check the compiled derivative against finite differences at a
         random point before returning it. Catches the common mistakes --
         a model that isn't actually differentiable, uses an unsupported
         operation, or silently drops the traced parameters."""
+    from .calibrate import CompiledModel
+    calibration = CompiledModel(model_fn, n_bias)
+    if n_bias:
+        _full = model_fn
+        model_fn = lambda theta: _full(theta, [0.0] * int(n_bias))           # noqa: E731  (nominal model)
+
     def g_delta(theta, delta):
         soft = [SoftNumber(float(d), float(t)) for t, d in zip(theta, delta)]
         result = model_fn(soft)
@@ -87,6 +96,8 @@ def soft_compile(model_fn, n_params=None, verify=True, verify_tol=1e-5):
         g_delta.d1_d2 = d1_d2
     except Exception:
         pass
+
+    g_delta.calibration = calibration
 
     if verify:
         if n_params is None:
